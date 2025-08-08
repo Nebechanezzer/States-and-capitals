@@ -4,163 +4,164 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gmail</title>
-  <link rel="icon" href="Thumbnail.jpg" type="image/jpeg">
+  <link rel="icon" href="games/Thumbnail.jpg" type="image/jpeg">
   <style>
-    body {
-      font-family: sans-serif;
-      margin: 0;
-      padding: 20px;
-      background: #1e1e1e;
-      color: white;
-    }
+    body { font-family: sans-serif; margin: 0; padding: 20px; background: #1e1e1e; color: white; }
     h1 { text-align: center; }
-    #game-list {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 15px;
-      margin-top: 20px;
-    }
-    .game-button {
-      padding: 15px 25px;
-      background-color: #4285f4;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      text-decoration: none;
+    #game-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-top: 20px; }
+    .game-button { 
+      padding: 15px 30px; 
+      background-color: #4285f4; 
+      color: white; 
+      border: none; 
+      border-radius: 8px; 
+      cursor: pointer; 
+      text-decoration: none; 
       font-size: 1.2em;
-      transition: transform 0.2s, background-color 0.2s;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
     }
-    .game-button:hover {
-      background-color: #3367d6;
+    .game-button:hover { 
+      background-color: #3367d6; 
       transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
-    #download-btn {
-      display: block;
-      margin: 20px auto;
-      padding: 10px 20px;
-      background-color: #0f9d58;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
+    #iframe-container { margin-top: 20px; display: none; }
+    iframe { width: 100%; height: 80vh; border: none; }
+    #download-btn { display: block; margin: 20px auto; padding: 10px 20px; background-color: #0f9d58; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    #cache-reminder { text-align: center; font-size: 0.9em; margin-top: 20px; color: #ccc; }
+    /* Suggestion system */
+    #toggle-suggestion { 
+      display: block; 
+      margin: 40px auto 0; 
+      padding: 10px 20px; 
+      background-color: #7289da; 
+      color: white; 
+      border: none; 
+      border-radius: 5px; 
+      cursor: pointer; 
     }
-    #suggestion-toggle {
-      display: block;
-      margin: 30px auto 10px;
-      padding: 8px 15px;
-      background-color: #ff9800;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
+    #toggle-suggestion:hover { background-color: #5b6eae; }
+    #suggestion-box { 
+      margin-top: 20px; 
+      text-align: center; 
+      display: none; 
     }
-    #suggestion-box {
-      display: none;
-      text-align: center;
-      margin-top: 10px;
+    #suggestion-box textarea { 
+      width: 60%; 
+      height: 60px; 
+      border-radius: 5px; 
+      padding: 8px; 
+      font-size: 0.9em; 
     }
-    #suggestion-box input {
-      padding: 8px;
-      width: 80%;
-      margin-bottom: 8px;
-      border-radius: 5px;
-      border: none;
+    #suggestion-box button { 
+      margin-top: 10px; 
+      padding: 8px 15px; 
+      background-color: #7289da; 
+      color: white; 
+      border: none; 
+      border-radius: 5px; 
+      cursor: pointer; 
+      font-size: 0.9em;
     }
-    #suggestion-box button {
-      padding: 8px 15px;
-      background-color: #4285f4;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
+    #suggestion-box button:hover { background-color: #5b6eae; }
   </style>
 </head>
 <body>
   <h1>Games</h1>
+  <div id="game-list">Loading games...</div>
 
-  <div id="game-list"></div>
-  <button id="download-btn">Game Downloader</button>
+  <div id="iframe-container">
+    <button id="download-btn">Download This Game</button>
+    <iframe id="game-frame"></iframe>
+  </div>
 
-  <button id="suggestion-toggle">Suggest a Game</button>
+  <div id="cache-reminder">If you added new games, please clear your browser cache or refresh manually.</div>
+
+  <button id="toggle-suggestion">Suggest a Game</button>
   <div id="suggestion-box">
-    <input type="text" id="suggestion-input" placeholder="Enter your game suggestion">
-    <br>
+    <textarea id="suggestion-text" placeholder="Enter your game suggestion here..."></textarea><br>
     <button id="send-suggestion">Send</button>
   </div>
 
   <script>
-    // Offline manifest
-    const games = [
-      "Deltarune.html",
-      "Undertale.html",
-      "Celeste.html",
-      "Half Life.html",
-      "Geometry Dash.html",
-      "Minecraft.html",
-      "Money Rush.html",
-      "ULTRAKILL.html",
-      "A Dance of Fire and Ice.html",
-      "Play.js",
-      "Slope.html",
-      "AI.html"
-    ];
+    const manifestPath = 'games/manifest.json';
+    let currentGame = null;
 
-    function renderGames() {
+    async function loadManifest() {
+      try {
+        const res = await fetch(manifestPath + '?_=' + Date.now());
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return await res.json();
+      } catch (e) {
+        console.error('Failed to fetch manifest:', e);
+        return [];
+      }
+    }
+
+    async function renderGames() {
       const listEl = document.getElementById('game-list');
+      const games = await loadManifest();
       listEl.innerHTML = '';
+      if (!games.length) {
+        listEl.textContent = 'No games found.';
+        return;
+      }
       games.forEach(file => {
         const name = file.replace(/\.html$/i, '');
         const btn = document.createElement('button');
         btn.textContent = name;
         btn.className = 'game-button';
-        btn.addEventListener('click', () => {
-          window.location.href = file;
-        });
+        btn.addEventListener('click', () => loadGame(file));
         listEl.appendChild(btn);
       });
     }
 
-    function downloadOfflineCopy() {
-      const blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'offline-games.html';
-      a.click();
-      URL.revokeObjectURL(url);
+    function loadGame(file) {
+      currentGame = file;
+      document.getElementById('iframe-container').style.display = 'block';
+      document.getElementById('game-frame').src = 'games/' + file;
     }
 
-    document.getElementById('download-btn').addEventListener('click', downloadOfflineCopy);
+    function downloadCurrentGame() {
+      if (!currentGame) return;
+      fetch('games/' + currentGame)
+        .then(res => res.blob())
+        .then(blob => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = currentGame;
+          a.click();
+          URL.revokeObjectURL(url);
+        });
+    }
 
-    // Suggestion box toggle
-    document.getElementById('suggestion-toggle').addEventListener('click', () => {
+    function sendSuggestion() {
+      const suggestion = document.getElementById('suggestion-text').value.trim();
+      if (!suggestion) return alert('Please enter a suggestion first.');
+      fetch('https://discord.com/api/webhooks/1403226311761068153/ELBf82v6YvcHB7ZwHyQnfrnlgIkLepnfseowTv19Yw0dYm1KuTuLGyAK8XtaKnHjMn_5', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: suggestion })
+      }).then(() => {
+        alert('Suggestion sent!');
+        document.getElementById('suggestion-text').value = '';
+      }).catch(err => {
+        alert('Failed to send suggestion.');
+        console.error(err);
+      });
+    }
+
+    // Toggle suggestion box visibility
+    document.getElementById('toggle-suggestion').addEventListener('click', () => {
       const box = document.getElementById('suggestion-box');
       box.style.display = box.style.display === 'none' ? 'block' : 'none';
     });
 
-    // Send suggestion
-    document.getElementById('send-suggestion').addEventListener('click', async () => {
-      const input = document.getElementById('suggestion-input');
-      const suggestion = input.value.trim();
-      if (!suggestion) return alert('Please enter a suggestion.');
-      try {
-        await fetch("https://discord.com/api/webhooks/1403226311761068153/ELBf82v6YvcHB7ZwHyQnfrnlgIkLepnfseowTv19Yw0dYm1KuTuLGyAK8XtaKnHjMn_5", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content: suggestion })
-        });
-        alert("Suggestion sent!");
-        input.value = '';
-      } catch (e) {
-        alert("Failed to send suggestion.");
-        console.error(e);
-      }
-    });
+    document.getElementById('download-btn').addEventListener('click', downloadCurrentGame);
+    document.getElementById('send-suggestion').addEventListener('click', sendSuggestion);
 
-    renderGames();
+    window.addEventListener('load', renderGames);
   </script>
 </body>
 </html>
