@@ -148,7 +148,7 @@
       btn.textContent = name;
       btn.className = 'game-button';
       btn.onclick = () => {
-        window.location.href = 'games/' + file;
+        window.location.href = 'https://raw.githubusercontent.com/Nebechanezzer/States-and-capitals/main/games/' + encodeURIComponent(file);
       };
       container.appendChild(btn);
     });
