@@ -1,69 +1,139 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Gmail</title>
-  <link rel="icon" href="games/Thumbnail.jpg" type="image/jpeg">
+  <link rel="icon" href="games/Thumbnail.jpg" type="image/jpeg" />
   <style>
-    body { font-family: sans-serif; margin: 0; padding: 20px; background: #1e1e1e; color: white; }
-    h1 { text-align: center; }
-    #game-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-top: 20px; }
-    .game-button { 
-      padding: 15px 30px; 
-      background-color: #4285f4; 
-      color: white; 
-      border: none; 
-      border-radius: 8px; 
-      cursor: pointer; 
-      text-decoration: none; 
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #1e1e1e;
+      color: white;
+    }
+    h1 {
+      text-align: center;
+    }
+    #game-list {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 20px;
+    }
+    .game-button {
+      padding: 15px 30px;
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
       font-size: 1.2em;
       transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
     }
-    .game-button:hover { 
-      background-color: #3367d6; 
+    .game-button:hover {
+      background-color: #3367d6;
       transform: scale(1.05);
       box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
-    #iframe-container { margin-top: 20px; display: none; }
-    iframe { width: 100%; height: 80vh; border: none; }
-    #download-btn { display: block; margin: 20px auto; padding: 10px 20px; background-color: #0f9d58; color: white; border: none; border-radius: 5px; cursor: pointer; }
-    #cache-reminder { text-align: center; font-size: 0.9em; margin-top: 20px; color: #ccc; }
+    #iframe-container {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #000;
+      z-index: 1000;
+      flex-direction: column;
+    }
+    #game-frame {
+      flex-grow: 1;
+      width: 100vw;
+      height: 100vh;
+      border: none;
+      background: #000;
+    }
+    #back-btn {
+      position: fixed;
+      top: 10px;
+      left: 10px;
+      z-index: 1100;
+      padding: 10px 20px;
+      font-size: 1em;
+      background-color: #f44336;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      transition: background-color 0.2s ease;
+    }
+    #back-btn:hover {
+      background-color: #d32f2f;
+    }
+    #download-btn {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      z-index: 1100;
+      padding: 10px 20px;
+      background-color: #0f9d58;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      transition: background-color 0.2s ease;
+    }
+    #download-btn:hover {
+      background-color: #0b7a3f;
+    }
+    #cache-reminder {
+      text-align: center;
+      font-size: 0.9em;
+      margin-top: 20px;
+      color: #ccc;
+    }
     /* Suggestion system */
-    #toggle-suggestion { 
-      display: block; 
-      margin: 40px auto 0; 
-      padding: 10px 20px; 
-      background-color: #7289da; 
-      color: white; 
-      border: none; 
-      border-radius: 5px; 
-      cursor: pointer; 
+    #toggle-suggestion {
+      display: block;
+      margin: 40px auto 0;
+      padding: 10px 20px;
+      background-color: #7289da;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
     }
-    #toggle-suggestion:hover { background-color: #5b6eae; }
-    #suggestion-box { 
-      margin-top: 20px; 
-      text-align: center; 
-      display: none; 
+    #toggle-suggestion:hover {
+      background-color: #5b6eae;
     }
-    #suggestion-box textarea { 
-      width: 60%; 
-      height: 60px; 
-      border-radius: 5px; 
-      padding: 8px; 
-      font-size: 0.9em; 
+    #suggestion-box {
+      margin-top: 20px;
+      text-align: center;
+      display: none;
     }
-    #suggestion-box button { 
-      margin-top: 10px; 
-      padding: 8px 15px; 
-      background-color: #7289da; 
-      color: white; 
-      border: none; 
-      border-radius: 5px; 
-      cursor: pointer; 
+    #suggestion-box textarea {
+      width: 60%;
+      height: 60px;
+      border-radius: 5px;
+      padding: 8px;
       font-size: 0.9em;
     }
-    #suggestion-box button:hover { background-color: #5b6eae; }
+    #suggestion-box button {
+      margin-top: 10px;
+      padding: 8px 15px;
+      background-color: #7289da;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.9em;
+    }
+    #suggestion-box button:hover {
+      background-color: #5b6eae;
+    }
   </style>
 </head>
 <body>
@@ -71,8 +141,9 @@
   <div id="game-list">Loading games...</div>
 
   <div id="iframe-container">
+    <button id="back-btn">← Back to Games</button>
     <button id="download-btn">Download This Game</button>
-    <iframe id="game-frame"></iframe>
+    <iframe id="game-frame" src="" allowfullscreen></iframe>
   </div>
 
   <div id="cache-reminder">If you added new games, please clear your browser cache or refresh manually.</div>
@@ -118,8 +189,16 @@
 
     function loadGame(file) {
       currentGame = file;
-      document.getElementById('iframe-container').style.display = 'block';
+      document.getElementById('iframe-container').style.display = 'flex';
+      document.getElementById('game-list').style.display = 'none';
       document.getElementById('game-frame').src = 'games/' + file;
+    }
+
+    function backToGames() {
+      currentGame = null;
+      document.getElementById('iframe-container').style.display = 'none';
+      document.getElementById('game-list').style.display = 'flex';
+      document.getElementById('game-frame').src = '';
     }
 
     function downloadCurrentGame() {
@@ -152,14 +231,14 @@
       });
     }
 
-    // Toggle suggestion box visibility
+    document.getElementById('download-btn').addEventListener('click', downloadCurrentGame);
+    document.getElementById('back-btn').addEventListener('click', backToGames);
+    document.getElementById('send-suggestion').addEventListener('click', sendSuggestion);
+
     document.getElementById('toggle-suggestion').addEventListener('click', () => {
       const box = document.getElementById('suggestion-box');
       box.style.display = box.style.display === 'none' ? 'block' : 'none';
     });
-
-    document.getElementById('download-btn').addEventListener('click', downloadCurrentGame);
-    document.getElementById('send-suggestion').addEventListener('click', sendSuggestion);
 
     window.addEventListener('load', renderGames);
   </script>
