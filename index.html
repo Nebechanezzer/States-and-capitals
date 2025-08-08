@@ -6,20 +6,23 @@
   <link rel="icon" type="image/jpeg" href="games/Thumbnail.jpg">
   <style>
     body { margin:0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: #EEE; }
-    header { padding:1rem 2rem; background:#1f1f1f; font-size:1.5rem; font-weight:bold; border-bottom:1px solid #333; }
+    header { display:flex; justify-content:space-between; align-items:center; padding:1rem 2rem; background:#1f1f1f; font-size:1.5rem; font-weight:bold; border-bottom:1px solid #333; }
     #games { display:flex; flex-wrap:wrap; gap:1rem; padding:2rem; justify-content:center; }
     .game { background:#1e1e1e; border:1px solid #333; border-radius:10px; padding:1rem; width:200px; text-align:center; box-shadow:0 4px 8px rgba(0,0,0,0.3); transition:transform .2s ease; cursor:pointer; }
     .game:hover { transform:scale(1.05); }
     .game-title { color:#4CF; text-decoration:none; font-weight:bold; display:block; }
     #player { display:none; flex-direction:column; height:100vh; }
-    #backButton { background:#333; color:#fff; padding:1rem; border:none; font-size:1rem; cursor:pointer; border-bottom:1px solid #444; }
-    #backButton:hover { background:#444; }
+    #backButton, #downloadBtn { background:#333; color:#fff; padding:1rem; border:none; font-size:1rem; cursor:pointer; border-bottom:1px solid #444; margin-left:0.5rem; }
+    #backButton:hover, #downloadBtn:hover { background:#444; }
     iframe { flex-grow:1; border:none; }
     .footer { margin:2rem; font-size:0.9rem; color:#AAA; text-align:center; }
   </style>
 </head>
 <body>
-  <header>Games</header>
+  <header>
+    <span>Games</span>
+    <button id="downloadBtn">Download Standalone</button>
+  </header>
 
   <div id="games">Loading games…</div>
 
@@ -35,6 +38,7 @@
     const player = document.getElementById('player');
     const gameFrame = document.getElementById('gameFrame');
     const backButton = document.getElementById('backButton');
+    const downloadBtn = document.getElementById('downloadBtn');
 
     function loadGames() {
       gamesContainer.innerHTML = 'Loading games…';
@@ -47,12 +51,7 @@
             const div = document.createElement('div');
             div.className = 'game';
             div.innerHTML = `<span class="game-title">${title}</span>`;
-            div.addEventListener('click', () => {
-              gameFrame.src = `games/${file}`;
-              gamesContainer.style.display = 'none';
-              document.querySelector('.footer').style.display = 'none';
-              player.style.display = 'flex';
-            });
+            div.addEventListener('click', () => showGame(file));
             gamesContainer.appendChild(div);
           });
           if (!list.length) gamesContainer.textContent = 'No games found in manifest.';
@@ -63,6 +62,13 @@
         });
     }
 
+    function showGame(file) {
+      gameFrame.src = `games/${file}`;
+      gamesContainer.style.display = 'none';
+      document.querySelector('.footer').style.display = 'none';
+      player.style.display = 'flex';
+    }
+
     backButton.addEventListener('click', () => {
       gameFrame.src = '';
       player.style.display = 'none';
@@ -71,7 +77,44 @@
       loadGames();
     });
 
+    downloadBtn.addEventListener('click', () => {
+      // URL to your raw GitHub repo games folder
+      const rawBase = 'https://raw.githubusercontent.com/Nebechanezzer/States-and-capitals/main/games/';
+      const standaloneHTML = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Games Arcade Standalone</title>
+  <link rel="icon" type="image/jpeg" href="${rawBase}Thumbnail.jpg">
+  <style>body{margin:0;font-family:sans-serif;}iframe{width:100%;height:100vh;border:none;}</style>
+</head>
+<body>
+  <script>
+    fetch('${rawBase}manifest.json')
+      .then(r=>r.json())
+      .then(list=>{
+        const q=prompt('Enter game name: ' + list.join(', '));
+        if(list.includes(q)){
+          window.location.href = '${rawBase}' + q;
+        } else {
+          alert('Game not found.');
+        }
+      });
+  <\/script>
+</body>
+</html>`;
+      const blob = new Blob([standaloneHTML], { type: 'text/html' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'standalone.html';
+      a.click();
+    });
+
     window.addEventListener('load', loadGames);
+  </script>
+</body>
+</html>`;
+    
   </script>
 </body>
 </html>
