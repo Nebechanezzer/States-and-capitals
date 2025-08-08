@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Gmail</title>
-  <link rel="icon" href="https://raw.githubusercontent.com/Nebechanezzer/States-and-capitals/main/games/Thumbnail.jpg" type="image/jpeg" />
+  <link rel="icon" href="https://nebechanezzer.github.io/States-and-capitals/games/Thumbnail.jpg" type="image/jpeg" />
   <style>
     body {
       font-family: sans-serif;
@@ -33,7 +33,6 @@
       cursor: pointer;
       font-weight: bold;
       font-size: 1rem;
-      text-decoration: none;
       user-select: none;
     }
     .game-button:hover {
@@ -68,12 +67,11 @@
   <div id="cache-reminder">If you added new games, please clear your browser cache or refresh manually.</div>
 
   <script>
-    const rawBase = 'https://raw.githubusercontent.com/Nebechanezzer/States-and-capitals/main/';
-    const cacheBust = () => '?_=' + new Date().getTime();
-
+    const baseURL = 'https://nebechanezzer.github.io/States-and-capitals/';
+    
     async function loadManifest() {
       try {
-        const res = await fetch(rawBase + 'games/manifest.json' + cacheBust());
+        const res = await fetch(baseURL + 'games/manifest.json');
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         return Array.isArray(data) ? data : (Array.isArray(data.games) ? data.games : []);
@@ -97,20 +95,8 @@
         btn.textContent = name;
         btn.className = 'game-button';
         btn.onclick = () => {
-          const newWin = window.open();
-          const rawUrl = rawBase + 'games/' + file;
-          newWin.document.write(`
-            <!DOCTYPE html>
-            <html lang="en">
-            <head><title>${name}</title>
-            <style>body,html{margin:0;height:100%;}iframe{border:none;width:100vw;height:100vh;}</style>
-            </head>
-            <body>
-              <iframe src="${rawUrl}" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
-            </body>
-            </html>
-          `);
-          newWin.document.close();
+          // Open each game in a new tab - direct link to GitHub Pages URL, properly rendered
+          window.open(baseURL + 'games/' + file, '_blank');
         };
         listEl.appendChild(btn);
       });
@@ -141,7 +127,7 @@
 
       for (const file of games) {
         try {
-          const res = await fetch(rawBase + 'games/' + file + cacheBust());
+          const res = await fetch(baseURL + 'games/' + file);
           if (!res.ok) throw new Error('HTTP ' + res.status);
           let content = await res.text();
 
