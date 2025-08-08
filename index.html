@@ -105,19 +105,32 @@
   <div id="cache-reminder">If you added new games, please clear your browser cache or refresh manually.</div>
 
 <script>
-  // Use raw GitHub URL for your repo's manifest.json
-  const manifestUrl = 'https://raw.githubusercontent.com/Nebechanezzer/States-and-capitals/main/games/manifest.json';
+  const onlineManifestUrl = 'https://raw.githubusercontent.com/Nebechanezzer/States-and-capitals/main/games/manifest.json';
+
+  const offlineGames = [
+    "Deltarune.html",
+    "Undertale.html",
+    "Celeste.html",
+    "Half Life.html",
+    "Geometry Dash.html",
+    "Minecraft.html",
+    "Money Rush.html",
+    "ULTRAKILL.html",
+    "A Dance of Fire and Ice.html",
+    "Play.js",
+    "Slope.html",
+    "AI.html"
+  ];
 
   async function loadManifest() {
     try {
-      const res = await fetch(manifestUrl + '?_=' + Date.now());
+      const res = await fetch(onlineManifestUrl + '?_=' + Date.now());
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const data = await res.json();
       return Array.isArray(data) ? data : (data.games || []);
     } catch(e) {
-      console.error('Error loading manifest:', e);
-      document.getElementById('game-list').textContent = 'Error loading games.';
-      return [];
+      console.warn('Could not fetch online manifest, falling back to offline list', e);
+      return offlineGames;
     }
   }
 
@@ -135,14 +148,12 @@
       btn.textContent = name;
       btn.className = 'game-button';
       btn.onclick = () => {
-        // open game in same tab
         window.location.href = 'games/' + file;
       };
       container.appendChild(btn);
     });
   }
 
-  // Game downloader downloads a copy of this exact HTML file (which will still fetch manifest online)
   function downloadStandalone() {
     const html = document.documentElement.outerHTML;
     const blob = new Blob([html], { type: 'text/html' });
@@ -156,18 +167,12 @@
 
   document.getElementById('download-btn').addEventListener('click', downloadStandalone);
 
-  // Suggestion box toggle
   const suggestionToggle = document.getElementById('suggestion-toggle');
   const suggestionBox = document.getElementById('suggestion-box');
   suggestionToggle.addEventListener('click', () => {
-    if (suggestionBox.style.display === 'block') {
-      suggestionBox.style.display = 'none';
-    } else {
-      suggestionBox.style.display = 'block';
-    }
+    suggestionBox.style.display = suggestionBox.style.display === 'block' ? 'none' : 'block';
   });
 
-  // Send suggestion to Discord webhook
   document.getElementById('send-suggestion').addEventListener('click', () => {
     const text = document.getElementById('suggestion-text').value.trim();
     if (!text) {
