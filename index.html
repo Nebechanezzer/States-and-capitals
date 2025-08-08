@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>HTML Game Arcade</title>
+  <title>Games</title>
   <style>
     body {
       margin: 0;
@@ -100,21 +100,25 @@
       .then(res => res.json())
       .then(list => {
         gamesContainer.innerHTML = '';
-        list.forEach(file => {
-          const title = file.replace('.html', '').replace(/[-_]/g, ' ');
+
+        list.forEach(filename => {
+          const title = filename.replace('.html', '').replace(/[-_]/g, ' ');
           const div = document.createElement('div');
           div.className = 'game';
           div.innerHTML = `<a href="#">${title}</a>`;
           div.addEventListener('click', e => {
             e.preventDefault();
-            gameFrame.src = `games/${file}`;
+            gameFrame.src = `games/${filename}`;
             gamesContainer.style.display = 'none';
             player.style.display = 'flex';
           });
           gamesContainer.appendChild(div);
         });
       })
-      .catch(e => gamesContainer.textContent = 'Error loading games.');
+      .catch(e => {
+        console.error('Error loading manifest.json:', e);
+        gamesContainer.textContent = 'Error loading games.';
+      });
 
     backButton.addEventListener('click', () => {
       gameFrame.src = '';
