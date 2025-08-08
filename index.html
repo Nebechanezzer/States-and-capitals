@@ -6,15 +6,35 @@
   <title>Gmail</title>
   <link rel="icon" href="games/Thumbnail.jpg" type="image/jpeg" />
   <style>
+    :root {
+      --bg-color: #1e1e1e;
+      --text-color: white;
+      --button-bg: #4285f4;
+      --button-hover-bg: #3367d6;
+      --suggestion-bg: #7289da;
+      --suggestion-hover-bg: #5b6eae;
+      --download-btn-bg: #0f9d58;
+      --download-btn-hover-bg: #0b7a3f;
+      --cache-reminder-color: #ccc;
+      --back-btn-bg: #555;
+      --back-btn-hover-bg: #444;
+      --save-load-btn-bg: #fbbc05;
+      --save-load-btn-hover-bg: #c69c00;
+    }
     body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
       font-family: sans-serif;
       margin: 0;
       padding: 20px;
-      background: #1e1e1e;
-      color: white;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
     h1 {
       text-align: center;
+      margin-bottom: 0;
     }
     #game-list {
       display: flex;
@@ -22,135 +42,218 @@
       justify-content: center;
       gap: 15px;
       margin-top: 20px;
+      max-width: 1000px;
+      width: 100%;
     }
     .game-button {
-      padding: 30px 45px;
-      background-color: #4285f4;
-      color: white;
+      padding: 20px 40px;
+      background-color: var(--button-bg);
+      color: var(--text-color);
       border: none;
-      border-radius: 8px;
+      border-radius: 10px;
       cursor: pointer;
+      font-size: 1.4em;
+      transition: transform 0.2s ease, box-shadow 0.2s ease,
+        background-color 0.2s ease;
       text-decoration: none;
-      font-size: 1.5em;
-      transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+      user-select: none;
     }
     .game-button:hover {
-      background-color: #3367d6;
-      transform: scale(1.1);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      background-color: var(--button-hover-bg);
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
+
     #iframe-container {
+      margin-top: 20px;
+      width: 100%;
+      max-width: 1200px;
+      height: 90vh;
       display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: #000;
-      z-index: 1000;
       flex-direction: column;
+      align-items: flex-start;
+      position: relative;
     }
-    #game-frame {
-      flex-grow: 1;
-      width: 100vw;
-      height: 100vh;
+    iframe {
+      width: 100%;
+      height: 100%;
       border: none;
-      background: #000;
+      border-radius: 8px;
+      background: black;
+      flex-grow: 1;
+    }
+
+    button {
+      user-select: none;
     }
     #back-btn {
-      position: fixed;
-      top: 10px;
-      left: 10px;
-      z-index: 1100;
-      padding: 10px 20px;
-      font-size: 1em;
-      background-color: #f44336;
-      color: white;
+      background-color: var(--back-btn-bg);
+      color: var(--text-color);
       border: none;
-      border-radius: 5px;
+      border-radius: 6px;
+      padding: 10px 20px;
       cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      margin-bottom: 10px;
+      font-weight: bold;
       transition: background-color 0.2s ease;
     }
     #back-btn:hover {
-      background-color: #d32f2f;
+      background-color: var(--back-btn-hover-bg);
     }
+
     #download-btn {
-      position: fixed;
-      top: 10px;
-      right: 10px;
-      z-index: 1100;
-      padding: 10px 20px;
-      background-color: #0f9d58;
-      color: white;
+      background-color: var(--download-btn-bg);
+      color: var(--text-color);
       border: none;
       border-radius: 5px;
+      padding: 10px 20px;
       cursor: pointer;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+      font-weight: bold;
+      margin-left: 10px;
       transition: background-color 0.2s ease;
     }
     #download-btn:hover {
-      background-color: #0b7a3f;
+      background-color: var(--download-btn-hover-bg);
     }
+
+    #save-btn, #load-btn {
+      background-color: var(--save-load-btn-bg);
+      color: black;
+      border: none;
+      border-radius: 5px;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-left: 10px;
+      transition: background-color 0.2s ease;
+    }
+    #save-btn:hover, #load-btn:hover {
+      background-color: var(--save-load-btn-hover-bg);
+    }
+
+    #buttons-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
     #cache-reminder {
       text-align: center;
       font-size: 0.9em;
       margin-top: 20px;
-      color: #ccc;
+      color: var(--cache-reminder-color);
+      max-width: 1000px;
     }
+
     /* Suggestion system */
     #toggle-suggestion {
       display: block;
       margin: 40px auto 0;
       padding: 10px 20px;
-      background-color: #7289da;
-      color: white;
+      background-color: var(--suggestion-bg);
+      color: var(--text-color);
       border: none;
       border-radius: 5px;
       cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.2s ease;
     }
     #toggle-suggestion:hover {
-      background-color: #5b6eae;
+      background-color: var(--suggestion-hover-bg);
     }
     #suggestion-box {
       margin-top: 20px;
       text-align: center;
       display: none;
+      max-width: 600px;
+      width: 90%;
     }
     #suggestion-box textarea {
-      width: 60%;
+      width: 100%;
       height: 60px;
       border-radius: 5px;
       padding: 8px;
       font-size: 0.9em;
+      resize: vertical;
     }
     #suggestion-box button {
       margin-top: 10px;
       padding: 8px 15px;
-      background-color: #7289da;
-      color: white;
+      background-color: var(--suggestion-bg);
+      color: var(--text-color);
       border: none;
       border-radius: 5px;
       cursor: pointer;
       font-size: 0.9em;
+      font-weight: bold;
+      transition: background-color 0.2s ease;
     }
     #suggestion-box button:hover {
-      background-color: #5b6eae;
+      background-color: var(--suggestion-hover-bg);
+    }
+
+    /* Theme toggle button */
+    #theme-toggle {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      padding: 10px 15px;
+      cursor: pointer;
+      border-radius: 5px;
+      border: none;
+      font-weight: bold;
+      background-color: #888;
+      color: white;
+      transition: background-color 0.2s ease;
+      z-index: 1000;
+      user-select: none;
+    }
+    #theme-toggle:hover {
+      background-color: #555;
+    }
+
+    /* Light theme overrides */
+    body.light-theme {
+      --bg-color: #f5f5f5;
+      --text-color: #222;
+      --button-bg: #1a73e8;
+      --button-hover-bg: #155ab6;
+      --suggestion-bg: #5c6bc0;
+      --suggestion-hover-bg: #3f4a8a;
+      --download-btn-bg: #0f9d58;
+      --download-btn-hover-bg: #0b7a3f;
+      --cache-reminder-color: #555;
+      --back-btn-bg: #ddd;
+      --back-btn-hover-bg: #bbb;
+      --save-load-btn-bg: #fbbc05;
+      --save-load-btn-hover-bg: #c69c00;
     }
   </style>
 </head>
 <body>
+  <button id="theme-toggle" title="Toggle light/dark theme">Switch Theme</button>
+
   <h1>Games</h1>
   <div id="game-list">Loading games...</div>
 
   <div id="iframe-container">
     <button id="back-btn">← Back to Games</button>
-    <button id="download-btn">Download This Game</button>
+    <div id="buttons-row">
+      <button id="download-btn">Download This Game</button>
+      <button id="save-btn">Save Game</button>
+      <button id="load-btn">Load Game</button>
+    </div>
     <iframe id="game-frame" src="" allowfullscreen></iframe>
   </div>
 
-  <div id="cache-reminder">if no new games appear, clear your browser cache or refresh manually.</div>
+  <div id="cache-reminder">
+    If you added new games, please clear your browser cache or refresh manually.
+  </div>
 
   <button id="toggle-suggestion">Suggest a Game</button>
   <div id="suggestion-box">
-    <textarea id="suggestion-text" placeholder="Enter your game suggestion here..."></textarea><br>
+    <textarea id="suggestion-text" placeholder="Enter your game suggestion here..."></textarea><br />
     <button id="send-suggestion">Send</button>
   </div>
 
@@ -177,7 +280,7 @@
         listEl.textContent = 'No games found.';
         return;
       }
-      games.forEach(file => {
+      games.forEach((file) => {
         const name = file.replace(/\.html$/i, '');
         const btn = document.createElement('button');
         btn.textContent = name;
@@ -191,56 +294,115 @@
       currentGame = file;
       document.getElementById('iframe-container').style.display = 'flex';
       document.getElementById('game-list').style.display = 'none';
-      document.getElementById('game-frame').src = 'games/' + file;
+      document.getElementById('iframe-container').scrollIntoView({ behavior: 'smooth' });
+      const iframe = document.getElementById('game-frame');
+      iframe.src = 'games/' + file;
     }
 
     function backToGames() {
-      currentGame = null;
       document.getElementById('iframe-container').style.display = 'none';
       document.getElementById('game-list').style.display = 'flex';
-      document.getElementById('game-frame').src = '';
+      currentGame = null;
+      const iframe = document.getElementById('game-frame');
+      iframe.src = '';
     }
 
     function downloadCurrentGame() {
-      if (!currentGame) return;
+      if (!currentGame) return alert('No game loaded.');
       fetch('games/' + currentGame)
-        .then(res => res.blob())
-        .then(blob => {
+        .then((res) => res.blob())
+        .then((blob) => {
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
           a.download = currentGame;
           a.click();
           URL.revokeObjectURL(url);
-        });
+        })
+        .catch(() => alert('Failed to download game.'));
+    }
+
+    function saveCurrentGame() {
+      if (!currentGame) {
+        alert('No game loaded to save.');
+        return;
+      }
+      localStorage.setItem('savedGame', currentGame);
+      alert(`Game "${currentGame.replace(/\.html$/i, '')}" saved!`);
+    }
+
+    function loadSavedGame() {
+      const saved = localStorage.getItem('savedGame');
+      if (!saved) {
+        alert('No saved game found.');
+        return;
+      }
+      loadGame(saved);
     }
 
     function sendSuggestion() {
       const suggestion = document.getElementById('suggestion-text').value.trim();
       if (!suggestion) return alert('Please enter a suggestion first.');
-      fetch('https://discord.com/api/webhooks/1403226311761068153/ELBf82v6YvcHB7ZwHyQnfrnlgIkLepnfseowTv19Yw0dYm1KuTuLGyAK8XtaKnHjMn_5', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: suggestion })
-      }).then(() => {
-        alert('Suggestion sent!');
-        document.getElementById('suggestion-text').value = '';
-      }).catch(err => {
-        alert('Failed to send suggestion.');
-        console.error(err);
-      });
+      fetch(
+        'https://discord.com/api/webhooks/1403226311761068153/ELBf82v6YvcHB7ZwHyQnfrnlgIkLepnfseowTv19Yw0dYm1KuTuLGyAK8XtaKnHjMn_5',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: suggestion }),
+        }
+      )
+        .then(() => {
+          alert('Suggestion sent!');
+          document.getElementById('suggestion-text').value = '';
+        })
+        .catch((err) => {
+          alert('Failed to send suggestion.');
+          console.error(err);
+        });
     }
 
-    document.getElementById('download-btn').addEventListener('click', downloadCurrentGame);
-    document.getElementById('back-btn').addEventListener('click', backToGames);
-    document.getElementById('send-suggestion').addEventListener('click', sendSuggestion);
-
+    // Toggle suggestion box visibility
     document.getElementById('toggle-suggestion').addEventListener('click', () => {
       const box = document.getElementById('suggestion-box');
       box.style.display = box.style.display === 'none' ? 'block' : 'none';
     });
 
-    window.addEventListener('load', renderGames);
+    // Back button
+    document.getElementById('back-btn').addEventListener('click', backToGames);
+
+    // Download button
+    document.getElementById('download-btn').addEventListener('click', downloadCurrentGame);
+
+    // Save/load buttons
+    document.getElementById('save-btn').addEventListener('click', saveCurrentGame);
+    document.getElementById('load-btn').addEventListener('click', loadSavedGame);
+
+    // Suggestion send button
+    document.getElementById('send-suggestion').addEventListener('click', sendSuggestion);
+
+    // Theme toggle
+    const themeToggleBtn = document.getElementById('theme-toggle');
+
+    function setTheme(theme) {
+      if (theme === 'light') {
+        document.body.classList.add('light-theme');
+      } else {
+        document.body.classList.remove('light-theme');
+      }
+      localStorage.setItem('theme', theme);
+    }
+
+    themeToggleBtn.addEventListener('click', () => {
+      const currentTheme = localStorage.getItem('theme') || 'dark';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      setTheme(newTheme);
+    });
+
+    window.addEventListener('load', () => {
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      setTheme(savedTheme);
+      renderGames();
+    });
   </script>
 </body>
 </html>
