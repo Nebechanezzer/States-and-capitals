@@ -4,164 +4,135 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gmail</title>
-  <link rel="icon" type="image/jpeg" href="games/Thumbnail.jpg" />
+  <link rel="icon" href="Thumbnail.jpg" type="image/jpeg">
   <style>
     body {
-      font-family: Arial, sans-serif;
+      font-family: sans-serif;
+      background: #f9f9f9;
       margin: 0;
       padding: 0;
-      background: #111;
-      color: white;
+    }
+    header {
+      background-color: #ffffff;
+      padding: 1em;
       text-align: center;
+      border-bottom: 1px solid #ccc;
     }
     h1 {
-      margin-top: 20px;
+      margin: 0;
+      font-size: 1.5em;
     }
-    #gameList button {
-      display: block;
-      margin: 10px auto;
-      padding: 10px 20px;
-      font-size: 16px;
-      background: #444;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
+    #games {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 2em;
     }
-    #gameList button:hover {
-      background: #666;
-    }
-    iframe {
-      width: 90%;
-      height: 80vh;
-      border: none;
-      margin-top: 20px;
-    }
-    #backButton, #footer {
-      margin: 20px;
-    }
-    #backButton {
-      display: none;
-      font-size: 18px;
-      cursor: pointer;
-      color: #0af;
-    }
-    #footer {
-      color: #888;
-    }
-    #downloadBtn {
-      margin: 20px;
-      padding: 10px 20px;
-      font-size: 16px;
-      background: #0af;
+    .game-link {
+      padding: 0.5em 1em;
+      background: #fff;
+      margin: 0.5em;
+      border: 1px solid #ccc;
+      text-decoration: none;
       color: black;
+      border-radius: 5px;
+    }
+    .game-link:hover {
+      background-color: #f0f0f0;
+    }
+    .button-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 1em;
+    }
+    button {
+      padding: 0.5em 1em;
+      font-size: 1em;
       border: none;
+      background-color: #4CAF50;
+      color: white;
       border-radius: 5px;
       cursor: pointer;
     }
-    #downloadBtn:hover {
-      background: #09c;
+    button:hover {
+      background-color: #45a049;
+    }
+    .footer {
+      text-align: center;
+      margin-top: 2em;
+      font-size: 0.9em;
+      color: #666;
     }
   </style>
 </head>
 <body>
-  <h1>Games</h1>
-  <div id="gameList"></div>
-  <div id="backButton" onclick="goBack()">&larr; Return to games</div>
-  <iframe id="gameFrame" style="display: none;"></iframe>
-  <div id="footer">(Clear cache if changes don't appear)</div>
-  <button id="downloadBtn" onclick="downloadStandalone()">Game Downloader</button>
+  <header>
+    <h1>Games</h1>
+    <div class="button-container">
+      <button id="downloadBtn">Game Downloader</button>
+    </div>
+  </header>
+
+  <div id="games"></div>
+
+  <div class="footer">
+    <p>Return to games</p>
+    <p>If you added new games, please clear your cache or refresh with Ctrl+F5.</p>
+  </div>
 
   <script>
-    const rawBase = "https://raw.githubusercontent.com/USERNAME/REPO/main/games/";
+    const rawBase = "https://raw.githubusercontent.com/USERNAME/REPO/main/"; // Replace with your GitHub repo
 
-    async function fetchGames() {
+    async function fetchManifest() {
       try {
-        const res = await fetch("games/manifest.json?cachebuster=" + Date.now());
-        const games = await res.json();
-        const list = document.getElementById("gameList");
-        list.innerHTML = "";
-        games.forEach(game => {
-          const name = game.replace(/\.html$/, "");
-          const btn = document.createElement("button");
-          btn.textContent = name;
-          btn.onclick = () => playGame(name);
-          list.appendChild(btn);
-        });
+        const res = await fetch("manifest.json?" + new Date().getTime());
+        const data = await res.json();
+        return data.map(name => name.endsWith(".html") ? name : name + ".html");
       } catch (err) {
-        document.getElementById("gameList").innerHTML = "Error loading games.";
-        console.error(err);
+        console.error("Failed to load manifest:", err);
+        return [];
       }
     }
 
-    function playGame(name) {
-      document.getElementById("gameList").style.display = "none";
-      document.getElementById("footer").style.display = "none";
-      document.getElementById("downloadBtn").style.display = "none";
-      document.getElementById("backButton").style.display = "block";
-      const frame = document.getElementById("gameFrame");
-      frame.src = `games/${name}.html`;
-      frame.style.display = "block";
+    function displayGames(games) {
+      const container = document.getElementById("games");
+      container.innerHTML = "";
+      games.forEach(file => {
+        const link = document.createElement("a");
+        link.href = file;
+        link.target = "_blank";
+        link.className = "game-link";
+        link.textContent = file.replace(/\.html$/, "");
+        container.appendChild(link);
+      });
     }
 
-    function goBack() {
-      document.getElementById("gameList").style.display = "block";
-      document.getElementById("footer").style.display = "block";
-      document.getElementById("downloadBtn").style.display = "inline-block";
-      document.getElementById("backButton").style.display = "none";
-      const frame = document.getElementById("gameFrame");
-      frame.src = "";
-      frame.style.display = "none";
-    }
-
-    function downloadStandalone() {
-      const standalone = `<!DOCTYPE html>
+    document.getElementById("downloadBtn").addEventListener("click", async () => {
+      const games = await fetchManifest();
+      const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Gmail</title>
-  <link rel="icon" type="image/jpeg" href="${rawBase}Thumbnail.jpg">
+  <title>Games</title>
 </head>
 <body>
   <h1>Games</h1>
-  <div id='gameList'></div>
-  <iframe id='gameFrame' style='width:90%; height:80vh; border:none; display:none;'></iframe>
-  <div id='backButton' onclick='goBack()' style='display:none; cursor:pointer; color:#0af;'>&larr; Return to games</div>
-  <script>
-    const games = ["Deltarune", "Undertale", "Celeste", "Half Life"];
-    const raw = "${rawBase}";
-    const list = document.getElementById("gameList");
-    games.forEach(name => {
-      const btn = document.createElement("button");
-      btn.textContent = name;
-      btn.onclick = () => {
-        document.getElementById("gameList").style.display = "none";
-        document.getElementById("backButton").style.display = "block";
-        const frame = document.getElementById("gameFrame");
-        frame.src = raw + name + ".html";
-        frame.style.display = "block";
-      };
-      list.appendChild(btn);
-    });
-    function goBack() {
-      document.getElementById("gameList").style.display = "block";
-      document.getElementById("backButton").style.display = "none";
-      const frame = document.getElementById("gameFrame");
-      frame.src = "";
-      frame.style.display = "none";
-    }
-  </script>
+  <ul>
+    ${games.map(g => `<li><a href="${rawBase}${g}" target="_blank">${g.replace(/\.html$/, "")}</a></li>`).join("\n")}
+  </ul>
 </body>
 </html>`;
 
-      const blob = new Blob([standalone], { type: "text/html" });
+      const blob = new Blob([html], { type: "text/html" });
+      const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
+      a.href = url;
       a.download = "standalone.html";
       a.click();
-    }
+      URL.revokeObjectURL(url);
+    });
 
-    fetchGames();
+    fetchManifest().then(displayGames);
   </script>
 </body>
 </html>
