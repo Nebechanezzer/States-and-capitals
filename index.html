@@ -1,149 +1,88 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>Google Classroom</title>
+  <meta charset="utf-8">
+  <title>Gmail</title>
+  <link rel="icon" type="image/jpeg" href="games/Thumbnail.jpg">
   <style>
     body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #121212;
+      color: #EEE;
+      padding: 2rem;
       margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background-color: #0f0f0f;
-      color: #fff;
     }
-
-    header {
-      padding: 1rem 2rem;
-      background: #1f1f1f;
-      font-size: 1.5rem;
-      font-weight: bold;
-      border-bottom: 1px solid #333;
+    h1 {
+      margin-bottom: 1rem;
+      font-size: 2.5rem;
+      color: #4CF;
     }
-
     #games {
       display: flex;
       flex-wrap: wrap;
-      padding: 2rem;
-      gap: 1.5rem;
-      justify-content: center;
+      gap: 1rem;
     }
-
     .game {
-      background: #1c1c1c;
-      border-radius: 12px;
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 10px;
       padding: 1rem;
-      width: 220px;
-      text-align: center;
-      transition: transform 0.2s, box-shadow 0.2s;
-      cursor: pointer;
+      width: 200px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+      transition: transform 0.2s ease;
     }
-
     .game:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.6);
+      transform: scale(1.05);
     }
-
     .game a {
-      color: #4cf;
+      color: #4CF;
       text-decoration: none;
       font-weight: bold;
-      font-size: 1.1rem;
-    }
-
-    #player {
-      display: none;
-      flex-direction: column;
-      height: 100vh;
-    }
-
-    #backButton {
-      background: #333;
-      color: #fff;
-      padding: 1rem;
-      border: none;
-      font-size: 1rem;
-      cursor: pointer;
-      border-bottom: 1px solid #444;
-    }
-
-    #backButton:hover {
-      background: #444;
-    }
-
-    iframe {
-      flex-grow: 1;
-      border: none;
-    }
-
-    footer.cache-reminder {
+      display: block;
       text-align: center;
+    }
+    .footer {
+      margin-top: 2rem;
       font-size: 0.9rem;
-      color: #888;
-      padding: 1rem;
-      background: #101010;
-      border-top: 1px solid #333;
+      color: #AAA;
+      text-align: center;
+    }
+    .back-link {
+      display: block;
+      margin-bottom: 1.5rem;
+      color: #4CF;
+      text-decoration: none;
+      font-size: 1rem;
     }
   </style>
 </head>
 <body>
-  <header>Games</header>
-
-  <div id="games" class="center">Loading games…</div>
-
-  <footer class="cache-reminder">
-    If new games aren’t appearing, please clear your browser cache (e.g., Ctrl+F5) or disable cache in DevTools.
-  </footer>
-
-  <div id="player">
-    <button id="backButton">← Back to games</button>
-    <iframe id="gameFrame"></iframe>
-  </div>
+  <a href="index.html" class="back-link">Return to games</a>
+  <h1>Games</h1>
+  <div id="games">Loading games…</div>
+  <div class="footer">If your game list isn't updating, try clearing your cache or refreshing the page.</div>
 
   <script>
-    const gamesContainer = document.getElementById('games');
-    const player = document.getElementById('player');
-    const gameFrame = document.getElementById('gameFrame');
-    const backButton = document.getElementById('backButton');
-
-    // Function to fetch and render games
     function loadGames() {
-      gamesContainer.innerHTML = 'Loading games…';
-      fetch(`./games/manifest.json?nocache=${Date.now()}`)
+      const container = document.getElementById('games');
+      fetch('games/manifest.json?cacheBust=' + Date.now())
         .then(res => res.json())
         .then(list => {
-          gamesContainer.innerHTML = '';
-          list.forEach(filename => {
-            const title = filename.replace('.html', '').replace(/[-_]/g, ' ');
+          container.innerHTML = '';
+          list.forEach(file => {
+            const title = file.replace('.html', '').replace(/[-_]/g, ' ');
             const div = document.createElement('div');
             div.className = 'game';
-            div.innerHTML = `<a href="#">${title}</a>`;
-            div.addEventListener('click', e => {
-              e.preventDefault();
-              gameFrame.src = `games/${filename}`;
-              gamesContainer.style.display = 'none';
-              player.style.display = 'flex';
-            });
-            gamesContainer.appendChild(div);
+            div.innerHTML = `<a href="games/${file}" target="_blank">${title}</a>`;
+            container.appendChild(div);
           });
-          if (gamesContainer.children.length === 0) {
-            gamesContainer.textContent = 'No games found in manifest.';
-          }
         })
         .catch(e => {
-          console.error('Error loading manifest.json:', e);
-          gamesContainer.textContent = 'Error loading games.';
+          container.textContent = 'Error loading games.';
         });
     }
 
-    // Initial load
-    loadGames();
-
-    // Back button returns to arcade and reloads manifest
-    backButton.addEventListener('click', () => {
-      gameFrame.src = '';
-      player.style.display = 'none';
-      gamesContainer.style.display = 'flex';
-      loadGames();
-    });
+    window.addEventListener('load', loadGames);
   </script>
 </body>
 </html>
