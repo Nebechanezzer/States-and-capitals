@@ -1,87 +1,116 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gmail</title>
-  <link rel="icon" href="games/Thumbnail.jpg" type="image/jpeg">
+  <link rel="icon" type="image/jpeg" href="Thumbnail.jpg" />
   <style>
-    body { font-family: sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
-    h1 { text-align: center; }
-    #game-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 20px; }
-    .game-button { padding: 10px 20px; background-color: #4285f4; color: white; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; }
-    .game-button:hover { background-color: #3367d6; }
-    #download-btn { display: block; margin: 20px auto; padding: 10px 20px; background-color: #0f9d58; color: white; border: none; border-radius: 5px; cursor: pointer; }
-    #cache-reminder { text-align: center; font-size: 0.9em; margin-top: 20px; color: #777; }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      padding: 20px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 2em;
+      margin-bottom: 20px;
+    }
+    .game-list {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+    }
+    .game-button {
+      padding: 10px 20px;
+      font-size: 1em;
+      cursor: pointer;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+    .game-button:hover {
+      background-color: #0056b3;
+    }
+    #returnBtn {
+      display: none;
+      margin-bottom: 20px;
+    }
+    #clearCacheMsg {
+      margin-top: 40px;
+      font-size: 0.9em;
+      color: #555;
+    }
   </style>
 </head>
 <body>
   <h1>Games</h1>
-  <div id="game-list">Loading games...</div>
-  <button id="download-btn">Game Downloader</button>
-  <div id="cache-reminder">If you added new games, please clear your browser cache or refresh manually.</div>
+  <button id="returnBtn" class="game-button" onclick="returnToMain()">Return to Games</button>
+  <div id="gameContainer" class="game-list"></div>
+  <button id="gameDownloader" class="game-button" onclick="downloadStandalone()">Game Downloader</button>
+  <div id="clearCacheMsg">If your game list is outdated, please clear your cache and reload the page.</div>
 
   <script>
-    const manifestPath = 'games/manifest.json';
-    const cacheBust = () => '?_=' + new Date().getTime();
-
-    async function loadManifest() {
+    async function fetchManifest() {
       try {
-        const res = await fetch(manifestPath + cacheBust());
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const data = await res.json();
-        // support both array and { games: [] }
-        return Array.isArray(data) ? data : (Array.isArray(data.games) ? data.games : []);
-      } catch (e) {
-        console.error('Error loading manifest:', e);
+        const response = await fetch('manifest.json?_=' + new Date().getTime());
+        const manifest = await response.json();
+        return manifest.games;
+      } catch (error) {
+        console.error("Failed to fetch manifest:", error);
         return [];
       }
     }
 
-    async function renderGames() {
-      const listEl = document.getElementById('game-list');
-      const games = await loadManifest();
-      listEl.innerHTML = '';
-      if (games.length === 0) {
-        listEl.textContent = 'No games found.';
-        return;
-      }
-      games.forEach(file => {
-        const name = file.replace(/\.html$/i, '');
-        const a = document.createElement('a');
-        a.href = 'games/' + file;
-        a.textContent = name;
-        a.className = 'game-button';
-        a.target = '_blank';
-        listEl.appendChild(a);
-      });
+    function createGameButton(gameName) {
+      const button = document.createElement("button");
+      button.className = "game-button";
+      button.textContent = gameName;
+      button.onclick = () => {
+        window.open(`${gameName}.html`, "_blank");
+      };
+      return button;
     }
 
-    async function downloadStandalone() {
-      const games = await loadManifest();
-      let html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Games</title></head><body>';
-      html += '<h1>Games</h1>';
-      if (games.length === 0) {
-        html += '<p>No games available.</p>';
-      } else {
-        games.forEach(file => {
-          const name = file.replace(/\.html$/i, '');
-          html += `<div><a href="${file}" target="_blank">${name}</a></div>`;
-        });
-      }
-      html += '</body></html>';
-
-      const blob = new Blob([html], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'games.html';
-      a.click();
-      URL.revokeObjectURL(url);
+    async function loadGames() {
+      const games = await fetchManifest();
+      const container = document.getElementById("gameContainer");
+      container.innerHTML = "";
+      games.forEach(game => container.appendChild(createGameButton(game)));
     }
 
-    document.getElementById('download-btn').addEventListener('click', downloadStandalone);
-    window.addEventListener('load', renderGames);
+    function returnToMain() {
+      document.getElementById("returnBtn").style.display = "none";
+      loadGames();
+    }
+
+    function downloadStandalone() {
+      fetch('manifest.json')
+        .then(response => response.json())
+        .then(async manifest => {
+          const gamePromises = manifest.games.map(async game => {
+            const response = await fetch(`${game}.html`);
+            const html = await response.text();
+            return `<h2>${game}</h2>\n<iframe srcdoc="${html.replace(/"/g, '&quot;').replace(/\n/g, '')}" width="100%" height="500"></iframe>`;
+          });
+
+          const gameIframes = await Promise.all(gamePromises);
+
+          const blob = new Blob([
+            `<!DOCTYPE html><html><head><title>Offline Games</title></head><body>${gameIframes.join("<hr>")}</body></html>`
+          ], { type: 'text/html' });
+
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob);
+          a.download = 'offline_games.html';
+          a.click();
+        })
+        .catch(err => console.error("Download failed:", err));
+    }
+
+    loadGames();
   </script>
 </body>
 </html>
