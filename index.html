@@ -95,7 +95,6 @@
         btn.textContent = name;
         btn.className = 'game-button';
         btn.onclick = () => {
-          // Open each game in a new tab - direct link to GitHub Pages URL, properly rendered
           window.open(baseURL + 'games/' + file, '_blank');
         };
         listEl.appendChild(btn);
@@ -103,60 +102,52 @@
     }
 
     async function downloadStandalone() {
-      const games = await loadManifest();
-      if (!games.length) {
-        alert('No games available to download.');
-        return;
-      }
+      let gameName = prompt("Enter the game name (without .html):");
+      if (!gameName) return;
+      const fileName = gameName + '.html';
 
-      let html = `<!DOCTYPE html>
+      try {
+        const res = await fetch(baseURL + 'games/' + fileName);
+        if (!res.ok) {
+          alert(`Game "${gameName}" not found.`);
+          return;
+        }
+        let content = await res.text();
+
+        // Escape content for srcdoc attribute:
+        content = content
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+
+        const offlineHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Offline Games</title>
+  <title>${gameName} - Offline</title>
   <style>
-    body { background: #121212; color: #eee; font-family: sans-serif; padding: 1rem; }
-    h1 { text-align: center; margin-bottom: 1rem; }
-    iframe { width: 100%; height: 600px; border: none; margin-bottom: 1.5rem; background: white; }
-    h2 { margin-top: 2rem; }
+    html, body, iframe { margin: 0; padding: 0; height: 100%; width: 100%; border: none; }
+    iframe { display: block; }
   </style>
 </head>
 <body>
-  <h1>Offline Games</h1>
-`;
-
-      for (const file of games) {
-        try {
-          const res = await fetch(baseURL + 'games/' + file);
-          if (!res.ok) throw new Error('HTTP ' + res.status);
-          let content = await res.text();
-
-          // Escape content for srcdoc attribute:
-          content = content
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-
-          const name = file.replace(/\.html$/i, '');
-          html += `<h2>${name}</h2><iframe srcdoc="${content}"></iframe>\n`;
-        } catch (e) {
-          html += `<p style="color: red;">Failed to load ${file}</p>\n`;
-        }
-      }
-
-      html += `
+  <iframe srcdoc="${content}" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
 </body>
 </html>`;
 
-      const blob = new Blob([html], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'offline_games.html';
-      a.click();
-      URL.revokeObjectURL(url);
+        const blob = new Blob([offlineHtml], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${gameName}_offline.html`;
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        alert('Failed to download the game.');
+        console.error(e);
+      }
     }
 
     document.getElementById('download-btn').addEventListener('click', downloadStandalone);
