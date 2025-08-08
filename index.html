@@ -2,156 +2,123 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Gmail</title>
-  <link rel="icon" href="https://nebechanezzer.github.io/States-and-capitals/games/Thumbnail.jpg" type="image/jpeg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Game Launcher</title>
   <style>
     body {
-      font-family: sans-serif;
-      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: white;
       padding: 20px;
-      background: #121212;
-      color: #eee;
       text-align: center;
     }
+
     h1 {
-      margin-bottom: 1rem;
+      margin-bottom: 20px;
     }
-    #game-list {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 12px;
-      margin-top: 20px;
+
+    input[type="text"] {
+      padding: 10px;
+      width: 300px;
+      max-width: 80%;
+      border: none;
+      border-radius: 4px;
+      margin-right: 10px;
     }
-    .game-button {
-      padding: 10px 18px;
-      background-color: #4caf50;
+
+    button {
+      padding: 10px 20px;
+      background-color: #1e90ff;
       color: white;
       border: none;
-      border-radius: 6px;
+      border-radius: 4px;
       cursor: pointer;
-      font-weight: bold;
-      font-size: 1rem;
-      user-select: none;
     }
-    .game-button:hover {
-      background-color: #45a049;
+
+    button:hover {
+      background-color: #1c86ee;
     }
-    #download-btn {
-      margin: 2rem auto;
-      display: block;
-      background-color: #2196f3;
-      color: white;
+
+    iframe {
+      width: 100%;
+      height: 600px;
       border: none;
-      border-radius: 6px;
-      padding: 12px 24px;
-      font-size: 1.1rem;
-      cursor: pointer;
-      user-select: none;
+      margin-top: 30px;
     }
-    #download-btn:hover {
-      background-color: #1976d2;
+
+    #suggestionForm {
+      margin-top: 50px;
     }
-    #cache-reminder {
-      margin-top: 2rem;
-      font-size: 0.9rem;
-      color: #aaa;
+
+    #suggestionForm input[type="text"] {
+      width: 250px;
+    }
+
+    #suggestionStatus {
+      margin-top: 10px;
+      font-size: 0.9em;
+      color: #ccc;
     }
   </style>
 </head>
 <body>
-  <h1>Games</h1>
-  <div id="game-list">Loading games...</div>
-  <button id="download-btn">Game Downloader</button>
-  <div id="cache-reminder">If you added new games, please clear your browser cache or refresh manually.</div>
+  <h1>Offline Game Launcher</h1>
+  <p>Enter the name of the game you want to play:</p>
+  <form id="gameForm">
+    <input type="text" id="gameInput" placeholder="e.g. flappybird" required />
+    <button type="submit">Launch</button>
+  </form>
+  <iframe id="gameFrame" style="display:none;"></iframe>
+
+  <!-- Game Suggestion Section -->
+  <div id="suggestionForm">
+    <h2>Suggest a Game</h2>
+    <form id="suggestForm">
+      <input type="text" id="gameSuggestion" placeholder="Suggest a game..." required />
+      <button type="submit">Submit</button>
+      <p id="suggestionStatus"></p>
+    </form>
+  </div>
 
   <script>
-    const baseURL = 'https://nebechanezzer.github.io/States-and-capitals/';
-    
-    async function loadManifest() {
-      try {
-        const res = await fetch(baseURL + 'games/manifest.json');
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const data = await res.json();
-        return Array.isArray(data) ? data : (Array.isArray(data.games) ? data.games : []);
-      } catch (e) {
-        console.error('Error loading manifest:', e);
-        return [];
-      }
-    }
+    document.getElementById("gameForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const gameName = document.getElementById("gameInput").value.trim();
+      const gameFrame = document.getElementById("gameFrame");
+      gameFrame.src = gameName + ".html";
+      gameFrame.style.display = "block";
+    });
 
-    async function renderGames() {
-      const listEl = document.getElementById('game-list');
-      const games = await loadManifest();
-      listEl.innerHTML = '';
-      if (games.length === 0) {
-        listEl.textContent = 'No games found.';
+    document.getElementById("suggestForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const game = document.getElementById("gameSuggestion").value.trim();
+      const status = document.getElementById("suggestionStatus");
+
+      if (!game) {
+        status.textContent = "Please enter a valid game name.";
         return;
       }
-      games.forEach(file => {
-        const name = file.replace(/\.html$/i, '');
-        const btn = document.createElement('button');
-        btn.textContent = name;
-        btn.className = 'game-button';
-        btn.onclick = () => {
-          window.open(baseURL + 'games/' + file, '_blank');
-        };
-        listEl.appendChild(btn);
-      });
-    }
 
-    async function downloadStandalone() {
-      let gameName = prompt("Enter the game name (without .html):");
-      if (!gameName) return;
-      const fileName = gameName + '.html';
-
-      try {
-        const res = await fetch(baseURL + 'games/' + fileName);
-        if (!res.ok) {
-          alert(`Game "${gameName}" not found.`);
-          return;
+      fetch("https://discord.com/api/webhooks/1403226311761068153/ELBf82v6YvcHB7ZwHyQnfrnlgIkLepnfseowTv19Yw0dYm1KuTuLGyAK8XtaKnHjMn_5", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ content: `New game suggestion: ${game}` })
+      })
+      .then(res => {
+        if (res.ok) {
+          status.textContent = "Thanks! Your suggestion was sent.";
+          document.getElementById("gameSuggestion").value = "";
+        } else {
+          status.textContent = "Failed to send. Try again later.";
         }
-        let content = await res.text();
-
-        // Escape content for srcdoc attribute:
-        content = content
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#39;');
-
-        const offlineHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>${gameName} - Offline</title>
-  <style>
-    html, body, iframe { margin: 0; padding: 0; height: 100%; width: 100%; border: none; }
-    iframe { display: block; }
-  </style>
-</head>
-<body>
-  <iframe srcdoc="${content}" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
-</body>
-</html>`;
-
-        const blob = new Blob([offlineHtml], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${gameName}_offline.html`;
-        a.click();
-        URL.revokeObjectURL(url);
-      } catch (e) {
-        alert('Failed to download the game.');
-        console.error(e);
-      }
-    }
-
-    document.getElementById('download-btn').addEventListener('click', downloadStandalone);
-    window.addEventListener('load', renderGames);
+      })
+      .catch(() => {
+        status.textContent = "An error occurred. Try again later.";
+      });
+    });
   </script>
 </body>
 </html>
