@@ -64,6 +64,22 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     }
 
+    #refresh-btn {
+      display: block; 
+      margin: 15px auto 0; 
+      padding: 10px 20px; 
+      background-color: #fbbc05; 
+      border: none; 
+      border-radius: 6px; 
+      cursor: pointer;
+      font-weight: bold;
+      color: black;
+      max-width: 200px;
+    }
+    #refresh-btn:hover {
+      background-color: #c69c00;
+    }
+
     #iframe-container {
       margin-top: 20px;
       width: 100%;
@@ -236,6 +252,7 @@
 
   <h1>Games</h1>
   <div id="game-list">Loading games...</div>
+  <button id="refresh-btn">Refresh Games</button>
 
   <div id="iframe-container">
     <button id="back-btn">← Back to Games</button>
@@ -294,6 +311,7 @@
       currentGame = file;
       document.getElementById('iframe-container').style.display = 'flex';
       document.getElementById('game-list').style.display = 'none';
+      document.getElementById('refresh-btn').style.display = 'none';
       document.getElementById('iframe-container').scrollIntoView({ behavior: 'smooth' });
       const iframe = document.getElementById('game-frame');
       iframe.src = 'games/' + file;
@@ -302,6 +320,7 @@
     function backToGames() {
       document.getElementById('iframe-container').style.display = 'none';
       document.getElementById('game-list').style.display = 'flex';
+      document.getElementById('refresh-btn').style.display = 'block';
       currentGame = null;
       const iframe = document.getElementById('game-frame');
       iframe.src = '';
@@ -379,6 +398,9 @@
 
     // Suggestion send button
     document.getElementById('send-suggestion').addEventListener('click', sendSuggestion);
+
+    // Refresh games button
+    document.getElementById('refresh-btn').addEventListener('click', renderGames);
 
     // Theme toggle
     const themeToggleBtn = document.getElementById('theme-toggle');
