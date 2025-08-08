@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Games</title>
+  <title>Google Classroom</title>
   <style>
     body {
       margin: 0;
@@ -10,6 +10,7 @@
       background-color: #0f0f0f;
       color: #fff;
     }
+
     header {
       padding: 1rem 2rem;
       background: #1f1f1f;
@@ -17,6 +18,7 @@
       font-weight: bold;
       border-bottom: 1px solid #333;
     }
+
     #games {
       display: flex;
       flex-wrap: wrap;
@@ -24,6 +26,7 @@
       gap: 1.5rem;
       justify-content: center;
     }
+
     .game {
       background: #1c1c1c;
       border-radius: 12px;
@@ -33,21 +36,25 @@
       transition: transform 0.2s, box-shadow 0.2s;
       cursor: pointer;
     }
+
     .game:hover {
       transform: translateY(-5px);
       box-shadow: 0 6px 15px rgba(0, 0, 0, 0.6);
     }
+
     .game a {
       color: #4cf;
       text-decoration: none;
       font-weight: bold;
       font-size: 1.1rem;
     }
+
     #player {
       display: none;
       flex-direction: column;
       height: 100vh;
     }
+
     #backButton {
       background: #333;
       color: #fff;
@@ -57,16 +64,23 @@
       cursor: pointer;
       border-bottom: 1px solid #444;
     }
+
     #backButton:hover {
       background: #444;
     }
+
     iframe {
       flex-grow: 1;
       border: none;
     }
-    .center {
+
+    footer.cache-reminder {
       text-align: center;
-      padding: 2rem;
+      font-size: 0.9rem;
+      color: #888;
+      padding: 1rem;
+      background: #101010;
+      border-top: 1px solid #333;
     }
   </style>
 </head>
@@ -74,6 +88,10 @@
   <header>Games</header>
 
   <div id="games" class="center">Loading games…</div>
+
+  <footer class="cache-reminder">
+    If new games aren’t appearing, please clear your browser cache (e.g., Ctrl+F5) or disable cache in DevTools.
+  </footer>
 
   <div id="player">
     <button id="backButton">← Back to games</button>
@@ -86,53 +104,45 @@
     const gameFrame = document.getElementById('gameFrame');
     const backButton = document.getElementById('backButton');
 
-    // DEBUG: exactly where we're trying to fetch from
-    const manifestPath = './games/manifest.json';
-    console.log('🐛 fetching manifest from:', manifestPath);
-
-    fetch(manifestPath)
-      .then(res => {
-        console.log('🐛 response status:', res.status, res.statusText);
-        if (!res.ok) throw new Error(`HTTP ${res.status} — ${res.statusText}`);
-        return res.json();
-      })
-      .then(list => {
-        if (!Array.isArray(list)) {
-          throw new Error('Manifest is not an array. Got: ' + JSON.stringify(list));
-        }
-        gamesContainer.innerHTML = '';
-
-        list.forEach(filename => {
-          // skip non-string entries
-          if (typeof filename !== 'string') return console.warn('Skipping invalid entry:', filename);
-
-          const title = filename.replace('.html', '').replace(/[-_]/g, ' ');
-          const div = document.createElement('div');
-          div.className = 'game';
-          div.innerHTML = `<a href="#">${title}</a>`;
-          div.addEventListener('click', e => {
-            e.preventDefault();
-            gameFrame.src = `games/${filename}`;
-            gamesContainer.style.display = 'none';
-            player.style.display = 'flex';
+    // Function to fetch and render games
+    function loadGames() {
+      gamesContainer.innerHTML = 'Loading games…';
+      fetch(`./games/manifest.json?nocache=${Date.now()}`)
+        .then(res => res.json())
+        .then(list => {
+          gamesContainer.innerHTML = '';
+          list.forEach(filename => {
+            const title = filename.replace('.html', '').replace(/[-_]/g, ' ');
+            const div = document.createElement('div');
+            div.className = 'game';
+            div.innerHTML = `<a href="#">${title}</a>`;
+            div.addEventListener('click', e => {
+              e.preventDefault();
+              gameFrame.src = `games/${filename}`;
+              gamesContainer.style.display = 'none';
+              player.style.display = 'flex';
+            });
+            gamesContainer.appendChild(div);
           });
-          gamesContainer.appendChild(div);
+          if (gamesContainer.children.length === 0) {
+            gamesContainer.textContent = 'No games found in manifest.';
+          }
+        })
+        .catch(e => {
+          console.error('Error loading manifest.json:', e);
+          gamesContainer.textContent = 'Error loading games.';
         });
+    }
 
-        // if we added no games, let the user know
-        if (gamesContainer.children.length === 0) {
-          gamesContainer.textContent = 'No games found in manifest.';
-        }
-      })
-      .catch(err => {
-        console.error('❌ Failed to load manifest:', err);
-        gamesContainer.textContent = 'Error loading games.  Check console for details.';
-      });
+    // Initial load
+    loadGames();
 
+    // Back button returns to arcade and reloads manifest
     backButton.addEventListener('click', () => {
       gameFrame.src = '';
       player.style.display = 'none';
       gamesContainer.style.display = 'flex';
+      loadGames();
     });
   </script>
 </body>
