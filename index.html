@@ -3,183 +3,118 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Game Hub</title>
+  <title>Game Launcher</title>
   <style>
     body {
-      font-family: sans-serif;
       background-color: #121212;
       color: white;
-      margin: 0;
-      padding: 0;
-    }
-
-    header {
-      background-color: #1e1e1e;
-      padding: 1rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    h1 {
-      margin: 0;
-      font-size: 1.5rem;
-    }
-
-    #game-list {
-      padding: 1rem;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 1rem;
-    }
-
-    .game-button {
-      background-color: #333;
-      color: white;
-      border: none;
-      padding: 1rem;
-      cursor: pointer;
-      border-radius: 8px;
-      transition: background-color 0.3s;
-    }
-
-    .game-button:hover {
-      background-color: #444;
-    }
-
-    #game-container {
-      margin: 2rem;
-    }
-
-    iframe {
-      width: 100%;
-      height: 80vh;
-      border: none;
-      border-radius: 8px;
-      background: white;
-    }
-
-    footer {
-      padding: 2rem;
-      background: #1e1e1e;
+      font-family: Arial, sans-serif;
+      padding: 2em;
       text-align: center;
     }
 
-    input, button, textarea {
-      padding: 0.5rem;
-      font-size: 1rem;
+    h1 {
+      margin-bottom: 1em;
+    }
+
+    #game-list button {
+      display: block;
+      margin: 0.5em auto;
+      padding: 0.75em 1.5em;
+      background-color: #1e88e5;
+      border: none;
+      color: white;
+      font-size: 1em;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    #game-list button:hover {
+      background-color: #1565c0;
+    }
+
+    #suggestion-box {
+      margin-top: 3em;
+      background: #1e1e1e;
+      padding: 1em;
+      border-radius: 8px;
+      display: inline-block;
+    }
+
+    #suggestion-box input,
+    #suggestion-box button {
+      padding: 0.5em;
+      margin: 0.25em;
       border-radius: 4px;
       border: none;
     }
 
-    button {
+    #suggestion-box input {
+      width: 200px;
+    }
+
+    #suggestion-box button {
+      background-color: #4caf50;
+      color: white;
       cursor: pointer;
     }
 
-    #downloader {
-      padding: 1rem;
-    }
-
-    #suggestion-form {
-      margin-top: 2rem;
-    }
-
-    #suggestion-form textarea {
-      width: 100%;
-      max-width: 600px;
-      height: 100px;
-      margin-bottom: 0.5rem;
-    }
-
-    #suggestion-form button {
-      background-color: #3a3a3a;
-      color: white;
-    }
-
-    #suggestion-form button:hover {
-      background-color: #555;
+    #suggestion-box button:hover {
+      background-color: #388e3c;
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Game Hub</h1>
-    <div id="downloader">
-      <input type="text" id="game-name-input" placeholder="Enter game name...">
-      <button onclick="downloadGame()">Game Downloader</button>
-    </div>
-  </header>
+  <h1>Select a Game</h1>
+  <div id="game-list">Loading games...</div>
 
-  <div id="game-list"></div>
-
-  <div id="game-container"></div>
-
-  <footer>
-    <form id="suggestion-form">
-      <h3>Suggest a new game</h3>
-      <textarea id="suggestion-text" placeholder="Enter your suggestion..."></textarea><br>
-      <button type="submit">Send Suggestion</button>
-      <p id="suggestion-status"></p>
-    </form>
-  </footer>
+  <div id="suggestion-box">
+    <h3>Suggest a Game</h3>
+    <input type="text" id="suggestionInput" placeholder="Enter your suggestion" />
+    <button onclick="submitSuggestion()">Submit</button>
+  </div>
 
   <script>
-    async function loadManifest() {
+    async function loadGames() {
       try {
-        const response = await fetch('manifest.json');
-        const manifest = await response.json();
+        const res = await fetch("games/manifest.json");
+        const gameList = await res.json();
 
-        const listContainer = document.getElementById('game-list');
-        manifest.games.forEach(game => {
-          const btn = document.createElement('button');
-          btn.textContent = game.name;
-          btn.className = 'game-button';
-          btn.onclick = () => loadGame(game.file);
-          listContainer.appendChild(btn);
+        const listContainer = document.getElementById("game-list");
+        listContainer.innerHTML = "";
+
+        gameList.forEach((file) => {
+          // Only show .html games
+          if (!file.endsWith(".html")) return;
+
+          const button = document.createElement("button");
+          button.textContent = file.replace(".html", "");
+          button.onclick = () => window.open("games/" + file, "_blank");
+          listContainer.appendChild(button);
         });
       } catch (err) {
-        console.error('Failed to fetch manifest:', err);
+        document.getElementById("game-list").textContent =
+          "Failed to load games: " + err;
       }
     }
 
-    function loadGame(filename) {
-      const container = document.getElementById('game-container');
-      container.innerHTML = `<iframe src="${filename}"></iframe>`;
+    function submitSuggestion() {
+      const suggestion = document.getElementById("suggestionInput").value.trim();
+      if (!suggestion) return;
+
+      fetch("https://discord.com/api/webhooks/1403226311761068153/ELBf82v6YvcHB7ZwHyQnfrnlgIkLepnfseowTv19Yw0dYm1KuTuLGyAK8XtaKnHjMn_5", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: `Game suggestion: ${suggestion}` }),
+      })
+        .then(() => {
+          document.getElementById("suggestionInput").value = "";
+          alert("Suggestion sent!");
+        })
+        .catch(() => alert("Failed to send suggestion."));
     }
 
-    function downloadGame() {
-      const name = document.getElementById('game-name-input').value.trim();
-      if (!name) return alert("Enter a game name.");
-
-      const url = name.endsWith('.html') ? name : `${name}.html`;
-      window.open(url, '_blank');
-    }
-
-    document.getElementById('suggestion-form').addEventListener('submit', async e => {
-      e.preventDefault();
-      const text = document.getElementById('suggestion-text').value.trim();
-      const status = document.getElementById('suggestion-status');
-      if (!text) return;
-
-      const webhookUrl = "https://discord.com/api/webhooks/1403226311761068153/ELBf82v6YvcHB7ZwHyQnfrnlgIkLepnfseowTv19Yw0dYm1KuTuLGyAK8XtaKnHjMn_5";
-      try {
-        const res = await fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content: text })
-        });
-        if (res.ok) {
-          status.textContent = "Suggestion sent!";
-          document.getElementById('suggestion-text').value = '';
-        } else {
-          status.textContent = "Failed to send.";
-        }
-      } catch (err) {
-        status.textContent = "Error sending suggestion.";
-      }
-    });
-
-    loadManifest();
+    loadGames();
   </script>
 </body>
 </html>
