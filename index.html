@@ -2,217 +2,106 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Game Hub</title>
+  <title>Game Launcher</title>
   <style>
     body {
-      margin: 0;
       font-family: Arial, sans-serif;
-      background: #121212;
-      color: white;
+      background: #111;
+      color: #fff;
+      margin: 0;
+      padding: 0;
       display: flex;
       flex-direction: column;
-      height: 100vh;
-    }
-    header {
-      background: #1f1f1f;
-      padding: 10px;
-      display: flex;
       align-items: center;
-      justify-content: space-between;
     }
-    header input {
-      padding: 5px;
-      width: 200px;
+    h1 {
+      margin: 20px;
     }
-    header button {
-      margin-left: 5px;
-      padding: 6px 10px;
-      background: #333;
-      border: none;
-      color: white;
-      border-radius: 5px;
+    #gameList {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 15px;
+      width: 90%;
+      max-width: 1000px;
+    }
+    .gameBtn {
+      background: #222;
+      border: 1px solid #555;
+      padding: 15px;
       cursor: pointer;
+      text-align: center;
+      border-radius: 12px;
+      transition: 0.2s;
     }
-    header button:hover {
+    .gameBtn:hover {
       background: #444;
     }
-    #game-list {
-      flex: 1;
-      overflow-y: auto;
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 10px;
-      padding: 10px;
-    }
-    .game-item {
-      background: #1f1f1f;
-      padding: 10px;
-      border-radius: 10px;
-      text-align: center;
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    .game-item:hover {
-      background: #333;
-    }
     iframe {
-      width: 100%;
-      height: 100%;
+      width: 90%;
+      height: 600px;
       border: none;
+      margin: 20px 0;
+      border-radius: 12px;
     }
-    #game-frame {
-      flex: 1;
-      display: none;
-      flex-direction: column;
-    }
-    #back-btn {
-      padding: 10px;
-      background: #1f1f1f;
-      border: none;
-      color: white;
+    #fullscreenBtn {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #333;
+      color: #fff;
+      border: 1px solid #555;
+      border-radius: 8px;
       cursor: pointer;
     }
-    #fullscreen-btn {
-      padding: 10px;
-      background: #1f1f1f;
-      border: none;
-      color: white;
-      cursor: pointer;
-      margin-left: 10px;
-    }
-    /* Themes */
-    .light {
-      background: #f0f0f0;
-      color: black;
-    }
-    .light header {
-      background: #ddd;
-    }
-    .light .game-item {
-      background: #fff;
-    }
-    .light .game-item:hover {
-      background: #eee;
+    #fullscreenBtn:hover {
+      background: #555;
     }
   </style>
 </head>
 <body>
-  <header>
-    <div>
-      <input type="text" id="search" placeholder="Search games...">
-      <button id="theme-btn">Toggle Theme</button>
-      <button id="fullscreen-btn">Fullscreen</button>
-    </div>
-  </header>
-
-  <div id="game-list"></div>
-
-  <div id="game-frame">
-    <div style="display:flex;justify-content:space-between;align-items:center;background:#1f1f1f;">
-      <button id="back-btn">⬅ Back</button>
-    </div>
-    <iframe id="iframe" src=""></iframe>
-  </div>
+  <h1>Game Launcher</h1>
+  <div id="gameList"></div>
+  <iframe id="gameFrame"></iframe>
+  <button id="fullscreenBtn" style="display:none;">Fullscreen</button>
 
   <script>
-    const manifest = [
-      "Deltarune.html",
-      "Undertale.html",
-      "Celeste.html",
-      "Half Life.html",
-      "Geometry Dash.html",
-      "Minecraft.html",
-      "Money Rush.html",
-      "ULTRAKILL.html",
-      "A Dance of Fire and Ice.html",
-      "Play.js",
-      "Slope.html",
-      "AI.html",
-      "osu!.html",
-      "Run 1.html",
-      "Run 2.html",
-      "Run 3.html",
-      "Space Waves.html",
-      "Smash Karts.html",
-      "Block Blast.html",
-      "EmulatorJS.html",
-      "Duck Life.html",
-      "Duck Life 2.html",
-      "Duck Life 3.html",
-      "Duck Life 4.html",
-      "Duck Life 5.html",
-      "Tunnel Rush.html",
-      "2048.html",
-      "1v1.LoL.html",
-      "Sort The Court.html",
-      "Slice it All.html",
-      "12 Mini Battles.html",
-      "Spiral Roll.html",
-      "Stickman Hook.html",
-      "Station Saturn.html",
-      "Weapon Craft Run.html",
-      "Time Shooter 1.html",
-      "Time Shooter 2.html",
-      "Time Shooter 3_SWAT.html",
-      "Stickman Climb.html",
-      "Sandtris.html",
-      "Time Survivor.html",
-      "2048 Merge Run",
-      "BlackJack.html",
-      "City Defense.html"
-    ];
+    async function loadManifest() {
+      try {
+        const response = await fetch('games/manifest.json'); // 👈 now points to games folder
+        const files = await response.json();
+        const gameList = document.getElementById('gameList');
+        const iframe = document.getElementById('gameFrame');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
 
-    const gameList = document.getElementById("game-list");
-    const search = document.getElementById("search");
-    const iframe = document.getElementById("iframe");
-    const gameFrame = document.getElementById("game-frame");
-    const themeBtn = document.getElementById("theme-btn");
-    const backBtn = document.getElementById("back-btn");
-    const fullscreenBtn = document.getElementById("fullscreen-btn");
-
-    function loadGames(filter = "") {
-      gameList.innerHTML = "";
-      manifest
-        .filter(game => game.toLowerCase().includes(filter.toLowerCase()))
-        .forEach(game => {
-          if (!game.endsWith(".js")) { // Skip scripts in manifest
-            const div = document.createElement("div");
-            div.className = "game-item";
-            div.textContent = game.replace(".html", "");
-            div.onclick = () => openGame(game);
-            gameList.appendChild(div);
+        files.forEach(file => {
+          if (file.endsWith('.html')) {
+            const btn = document.createElement('div');
+            btn.className = 'gameBtn';
+            btn.textContent = file.replace('.html', '');
+            btn.onclick = () => {
+              iframe.src = 'games/' + file; // 👈 load from games folder
+              fullscreenBtn.style.display = 'inline-block';
+            };
+            gameList.appendChild(btn);
           }
         });
-    }
 
-    function openGame(game) {
-      gameList.style.display = "none";
-      gameFrame.style.display = "flex";
-      iframe.src = game;
-    }
+        fullscreenBtn.onclick = () => {
+          if (iframe.requestFullscreen) {
+            iframe.requestFullscreen();
+          } else if (iframe.webkitRequestFullscreen) {
+            iframe.webkitRequestFullscreen();
+          } else if (iframe.msRequestFullscreen) {
+            iframe.msRequestFullscreen();
+          }
+        };
 
-    backBtn.onclick = () => {
-      iframe.src = "";
-      gameFrame.style.display = "none";
-      gameList.style.display = "grid";
-    };
-
-    themeBtn.onclick = () => {
-      document.body.classList.toggle("light");
-    };
-
-    fullscreenBtn.onclick = () => {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen();
-      } else {
-        document.exitFullscreen();
+      } catch (error) {
+        console.error("Failed to load manifest:", error);
       }
-    };
+    }
 
-    search.addEventListener("input", e => loadGames(e.target.value));
-
-    loadGames();
+    loadManifest();
   </script>
 </body>
 </html>
