@@ -4,17 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gmail</title>
-  <link rel="icon" href="games/thumbnail.png" type="image/png">
+  <link rel="icon" href="games/thumbnail.png" type="image/png" sizes="32x32">
   <style>
     body {
       font-family: Arial, sans-serif;
       background: #1e1e1e;
       color: white;
       margin: 0;
-      padding: 0;
       display: flex;
       flex-direction: column;
-      height: 100vh;
+      min-height: 100vh;
     }
     header {
       background: #333;
@@ -34,29 +33,87 @@
       flex-wrap: wrap;
       padding: 10px;
       gap: 10px;
-      overflow-y: auto;
       background: #222;
       flex: 1;
+      overflow-y: auto;
+      justify-content: center;
     }
     .game-button {
-      padding: 15px 25px;
+      padding: 18px 30px;
       background: #444;
       border: none;
       border-radius: 8px;
       color: white;
       cursor: pointer;
       transition: 0.2s;
-      font-size: 1.1em;
+      font-size: 1.2em;
     }
     .game-button:hover {
       background: #666;
+      transform: scale(1.05);
     }
-    #game-frame {
-      flex: 3;
-      border: none;
+    #iframe-container {
+      display: none;
+      flex-direction: column;
       width: 100%;
-      height: 60vh;
+      height: 100%;
     }
+    iframe {
+      border: none;
+      flex: 1;
+      width: 100%;
+    }
+    #iframe-controls {
+      display: flex;
+      justify-content: space-between;
+      background: #333;
+      padding: 8px 12px;
+    }
+    #iframe-controls button {
+      padding: 8px 12px;
+      background: #4285f4;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+    }
+    #iframe-controls button:hover {
+      background: #3367d6;
+    }
+    #toggle-suggestion {
+      display: block;
+      margin: 10px auto;
+      padding: 10px 20px;
+      background-color: #7289da;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #toggle-suggestion:hover { background-color: #5b6eae; }
+    #suggestion-box {
+      display: none;
+      text-align: center;
+      margin: 10px auto;
+    }
+    #suggestion-box textarea {
+      width: 60%;
+      height: 60px;
+      border-radius: 5px;
+      padding: 8px;
+      font-size: 0.9em;
+    }
+    #suggestion-box button {
+      margin-top: 10px;
+      padding: 8px 15px;
+      background-color: #7289da;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.9em;
+    }
+    #suggestion-box button:hover { background-color: #5b6eae; }
   </style>
 </head>
 <body>
@@ -64,57 +121,129 @@
     <input type="text" id="search" placeholder="Search games...">
   </header>
 
-  <div id="game-list"></div>
-  <iframe id="game-frame"></iframe>
+  <div id="game-list">Loading games...</div>
+
+  <div id="iframe-container">
+    <div id="iframe-controls">
+      <button id="back-btn">Back</button>
+      <button id="fullscreen-btn">Fullscreen</button>
+      <button id="download-btn">Download Game</button>
+    </div>
+    <iframe id="game-frame"></iframe>
+  </div>
+
+  <button id="toggle-suggestion">Suggest a Game</button>
+  <div id="suggestion-box">
+    <textarea id="suggestion-text" placeholder="Enter your game suggestion..."></textarea><br>
+    <button id="send-suggestion">Send</button>
+  </div>
 
   <script>
+    const MANIFEST_PATH = "games/manifest.json";
     const WEBHOOK_URL = "https://discord.com/api/webhooks/1403226311761068153/ELBf82v6YvcHB7ZwHyQnfrnlgIkLepnfseowTv19Yw0dYm1KuTuLGyAK8XtaKnHjMn_5";
-    const MANIFEST_PATH = "games/manifest.json"; // include folder
+    let currentGame = null;
 
-    async function loadGames() {
+    async function loadManifest() {
       try {
-        const response = await fetch(MANIFEST_PATH + '?_=' + Date.now());
-        const files = await response.json(); // ["Undertale.html", "Celeste.html", ...]
-
-        const gameList = document.getElementById("game-list");
-        const searchInput = document.getElementById("search");
-
-        function renderGames(filter = "") {
-          gameList.innerHTML = "";
-          files
-            .filter(file => file.toLowerCase().includes(filter.toLowerCase()))
-            .forEach(file => {
-              const name = file.replace(".html", "");
-              const button = document.createElement("button");
-              button.textContent = name;
-              button.className = "game-button";
-
-              button.onclick = () => {
-                document.getElementById("game-frame").src = 'games/' + file; // correct folder path
-                logToWebhook(name);
-              };
-
-              gameList.appendChild(button);
-            });
-        }
-
-        searchInput.addEventListener("input", e => renderGames(e.target.value));
-        renderGames();
+        const res = await fetch(MANIFEST_PATH + '?_=' + Date.now());
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return await res.json();
       } catch (err) {
-        console.error("Failed to load manifest:", err);
-        document.getElementById("game-list").textContent = "Failed to load games.";
+        console.error("Failed to fetch manifest:", err);
+        return [];
       }
     }
 
-    function logToWebhook(gameName) {
+    async function renderGames() {
+      const gameList = document.getElementById("game-list");
+      const searchInput = document.getElementById("search");
+      const files = await loadManifest();
+      gameList.innerHTML = '';
+
+      function showGames(filter = "") {
+        gameList.innerHTML = '';
+        files
+          .filter(file => file.toLowerCase().includes(filter.toLowerCase()))
+          .forEach(file => {
+            const name = file.replace(/\.html$/i, '');
+            const btn = document.createElement("button");
+            btn.className = "game-button";
+            btn.textContent = name;
+            btn.onclick = () => loadGame(file);
+            gameList.appendChild(btn);
+          });
+      }
+
+      searchInput.addEventListener("input", e => showGames(e.target.value));
+      showGames();
+    }
+
+    function loadGame(file) {
+      currentGame = file;
+      document.getElementById("game-list").style.display = "none";
+      document.getElementById("iframe-container").style.display = "flex";
+      document.getElementById("game-frame").src = "games/" + file;
+      logWebhook(file);
+    }
+
+    document.getElementById("back-btn").addEventListener("click", () => {
+      document.getElementById("iframe-container").style.display = "none";
+      document.getElementById("game-list").style.display = "flex";
+      document.getElementById("game-frame").src = "";
+      currentGame = null;
+    });
+
+    document.getElementById("fullscreen-btn").addEventListener("click", () => {
+      const iframe = document.getElementById("game-frame");
+      if (iframe.requestFullscreen) iframe.requestFullscreen();
+      else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
+      else if (iframe.msRequestFullscreen) iframe.msRequestFullscreen();
+    });
+
+    document.getElementById("download-btn").addEventListener("click", () => {
+      if (!currentGame) return;
+      fetch("games/" + currentGame)
+        .then(res => res.blob())
+        .then(blob => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = currentGame;
+          a.click();
+          URL.revokeObjectURL(url);
+        });
+    });
+
+    function logWebhook(gameName) {
       fetch(WEBHOOK_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: `Game launched: ${gameName}` })
-      }).catch(err => console.error("Webhook error:", err));
+      }).catch(err => console.error(err));
     }
 
-    loadGames();
+    document.getElementById("toggle-suggestion").addEventListener("click", () => {
+      const box = document.getElementById("suggestion-box");
+      box.style.display = box.style.display === "none" ? "block" : "none";
+    });
+
+    document.getElementById("send-suggestion").addEventListener("click", () => {
+      const suggestion = document.getElementById("suggestion-text").value.trim();
+      if (!suggestion) return alert("Please enter a suggestion first.");
+      fetch(WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: suggestion })
+      }).then(() => {
+        alert("Suggestion sent!");
+        document.getElementById("suggestion-text").value = "";
+      }).catch(err => {
+        console.error(err);
+        alert("Failed to send suggestion.");
+      });
+    });
+
+    window.addEventListener("load", renderGames);
   </script>
 </body>
 </html>
