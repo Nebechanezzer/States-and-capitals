@@ -19,6 +19,9 @@
       font-size: 24px;
       font-weight: bold;
     }
+    .top-actions { text-align: center; padding: 12px 20px; }
+    .top-actions button { background:#2b2b2b; color:#fff; border:none; padding:10px 14px; border-radius:8px; cursor:pointer; }
+    .top-actions button:hover { background:#3a3a3a; }
     .container {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -33,98 +36,31 @@
       transition: transform 0.2s;
       position: relative;
     }
-    .game-card:hover {
-      transform: scale(1.05);
-    }
-    .game-card img {
-      width: 100%;
-      border-radius: 10px;
-      object-fit: cover;
-      display: block;
-    }
-    .buttons {
-      margin-top: 8px;
-      display: flex;
-      justify-content: space-around;
-      gap: 8px;
-    }
-    .buttons button {
-      flex: 1;
-      padding: 8px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: background 0.2s;
-    }
-    .play-btn {
-      background: #4caf50;
-      color: white;
-    }
-    .play-btn:hover {
-      background: #45a049;
-    }
-    .download-btn {
-      background: #2196f3;
-      color: white;
-    }
-    .download-btn:hover {
-      background: #1e88e5;
-    }
-    .suggestion-box {
-      background: #1f1f1f;
-      padding: 20px;
-      margin: 20px;
-      border-radius: 10px;
-    }
-    .suggestion-box h2 {
-      margin-top: 0;
-    }
-    .suggestion-box input, .suggestion-box button {
-      padding: 10px;
-      margin-top: 10px;
-      width: 100%;
-      border-radius: 6px;
-      border: none;
-    }
-    .suggestion-box input {
-      background: #2a2a2a;
-      color: #fff;
-    }
-    .suggestion-box button {
-      background: #4caf50;
-      color: #fff;
-      cursor: pointer;
-    }
-    .suggestion-box button:hover {
-      background: #45a049;
-    }
-    iframe.play-frame {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%;
-      height: 100%;
-      border: none;
-      z-index: 9999;
-      background: black;
-    }
-    .exit-btn {
-      position: fixed;
-      top: 12px;
-      right: 12px;
-      z-index: 10000;
-      padding: 10px 12px;
-      background: rgba(200,30,30,0.95);
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      display: none;
-    }
+    .game-card:hover { transform: scale(1.05); }
+    .game-card img { width: 100%; border-radius: 10px; object-fit: cover; display: block; }
+    .buttons { margin-top: 8px; display:flex; gap:8px; }
+    .buttons button { flex:1; padding:8px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; }
+    .play-btn { background:#4caf50; color:#fff; }
+    .play-btn:hover { background:#45a049; }
+    .download-btn { background:#2196f3; color:#fff; }
+    .download-btn:hover { background:#1e88e5; }
+    .suggestion-box { background:#1f1f1f; padding:20px; margin:20px; border-radius:10px; }
+    .suggestion-box h2 { margin-top:0; }
+    .suggestion-box input, .suggestion-box button { padding:10px; margin-top:10px; width:100%; border-radius:6px; border:none; }
+    .suggestion-box input { background:#2a2a2a; color:#fff; }
+    .suggestion-box button { background:#4caf50; color:#fff; cursor:pointer; }
+    .suggestion-box button:hover { background:#45a049; }
+    iframe.play-frame { position: fixed; top: 0; left: 0; width: 100%; height: 100%; border: none; z-index: 9999; background:black; }
+    .exit-btn { position: fixed; top: 12px; right: 12px; z-index: 10000; padding:10px 12px; background: rgba(200,30,30,0.95); color:white; border:none; border-radius:8px; cursor:pointer; display:none; }
+    footer { text-align:center; padding:16px 10px; color:#bbb; }
   </style>
 </head>
 <body>
   <header>Games</header>
+
+  <div class="top-actions">
+    <button id="downloadStandaloneBtn">⬇ Download html.html (Offline)</button>
+  </div>
 
   <div class="container" id="gameContainer"></div>
 
@@ -138,7 +74,7 @@
 
   <script>
     // CONFIG
-    const MANIFEST_URL = 'games/manifest.json'; // manifest in games/
+    const MANIFEST_URL = 'games/manifest.json';
     const DISCORD_WEBHOOK = 'https://discord.com/api/webhooks/1403226311761068153/ELBf82v6YvcHB7ZwHyQnfrnlgIkLepnfseowTv19Yw0dYm1KuTuLGyAK8XtaKnHjMn_5';
 
     // state
@@ -146,7 +82,7 @@
     const container = document.getElementById('gameContainer');
     const exitBtn = document.getElementById('exitBtn');
 
-    // Utility to create element with attrs
+    // create element helper
     function el(tag, attrs = {}, children = []) {
       const e = document.createElement(tag);
       for (const k in attrs) {
@@ -165,21 +101,12 @@
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
 
-        // Normalize into array of file-names or objects
-        // Possible formats:
-        // 1) ["Deltarune.html", "Undertale.html", ...]
-        // 2) [{ title: "Deltarune", file: "Deltarune.html" }, ...]
-        // 3) [{ title: "Deltarune", folder: "Deltarune", ... }, ...]  (legacy)
         let entries = [];
-
         if (Array.isArray(data) && data.length > 0 && typeof data[0] === 'string') {
-          // simple array of filenames
           entries = data.map(fname => ({ title: fname.replace(/\.[^/.]+$/, ''), file: fname, folder: null }));
         } else if (Array.isArray(data) && typeof data[0] === 'object') {
-          // already objects (title/file/folder)
           entries = data.map(obj => {
-            // handle older shape where obj.file or obj.folder may differ
-            if (typeof obj === 'string') { // defensive
+            if (typeof obj === 'string') {
               const fname = obj;
               return { title: fname.replace(/\.[^/.]+$/, ''), file: fname, folder: null };
             }
@@ -187,9 +114,6 @@
             const title = obj.title || (typeof file === 'string' ? file.replace(/\.[^/.]+$/, '') : (obj.folder || 'Unknown'));
             return { title, file, folder: obj.folder || null };
           });
-        } else {
-          // unknown manifest shape — fail gracefully
-          console.warn('Unknown manifest shape, trying fallback.');
         }
 
         renderGames(entries);
@@ -198,35 +122,29 @@
       }
     }
 
-    // Render game cards (keeps existing structure)
+    // Render game cards
     function renderGames(entries) {
       container.innerHTML = '';
       entries.forEach(entry => {
-        // entry: { title, file, folder }
         const file = entry.file;
-        if (!file || (typeof file !== 'string')) return; // skip bad entries
-        // only show html files by default
+        if (!file || typeof file !== 'string') return;
         if (!/\.html$/i.test(file)) return;
 
         const title = entry.title || file.replace(/\.[^/.]+$/, '');
-        // try thumbnail at games/<title>/thumbnail.png or hide img if missing
-        const thumbPath = entry.folder ? `games/${entry.folder}/thumbnail.png` : `games/${title}/thumbnail.png`;
+        const thumbPath = entry.folder ? `games/${entry.folder}/thumbnail.png` : `games/${encodeURIComponent(title)}/thumbnail.png`;
 
         const img = el('img', { src: thumbPath, alt: title });
         img.onerror = () => { img.style.display = 'none'; };
 
         const titleEl = el('p', { text: title });
 
-        // Play button: opens in new window and attempts to request fullscreen there (best-effort)
         const playBtn = el('button', { class: 'play-btn', text: 'Play' });
         playBtn.addEventListener('click', (e) => {
           e.stopPropagation();
-          // open from games/ folder
           const url = entry.folder ? `games/${entry.folder}/index.html` : `games/${encodeURIComponent(file)}`;
           openGameFullscreen(url);
         });
 
-        // Download button: direct download of the specific game's .html file
         const downloadBtn = el('button', { class: 'download-btn', text: 'Download' });
         downloadBtn.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -247,21 +165,13 @@
 
     // Open a game fullscreen overlay (iframe) with exit button
     function openGameFullscreen(url) {
-      // create iframe
-      if (currentIframe) return; // already open
+      if (currentIframe) return;
       const iframe = document.createElement('iframe');
       iframe.className = 'play-frame';
       iframe.src = url;
       document.body.appendChild(iframe);
       currentIframe = iframe;
-
-      // show exit button
       exitBtn.style.display = 'block';
-
-      // attempt to request fullscreen for the iframe element (best-effort)
-      iframe.addEventListener('load', () => {
-        // nothing required; user can click exit to return
-      });
     }
 
     // Close overlay
@@ -275,8 +185,6 @@
 
     // Force-download helper
     function forceDownload(url, filename) {
-      // create an anchor and click it. This works for same-origin or direct file links; for cross-origin
-      // raw GitHub files, the browser may open them instead. Still this triggers download attribute where possible.
       const a = document.createElement('a');
       a.href = url;
       a.download = filename || '';
@@ -303,6 +211,11 @@
         console.error('Failed to send suggestion', err);
         alert('Failed to send suggestion.');
       }
+    });
+
+    // Download standalone html.html (from same folder)
+    document.getElementById('downloadStandaloneBtn').addEventListener('click', () => {
+      forceDownload('html.html', 'html.html');
     });
 
     // initialize
