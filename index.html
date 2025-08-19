@@ -2,70 +2,158 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Gmail</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game Launcher</title>
+  <link rel="icon" type="image/png" href="thumbnail.png">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: white;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 {
+      margin: 20px;
+    }
+    #game-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      width: 90%;
+      max-width: 1000px;
+    }
+    .game-button {
+      background: #1e1e1e;
+      border: none;
+      border-radius: 10px;
+      padding: 15px;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .game-button:hover {
+      background: #333;
+    }
+    #game-frame {
+      display: none;
+      width: 90%;
+      height: 80vh;
+      border: none;
+      margin-top: 20px;
+    }
+    #back-button {
+      display: none;
+      margin: 15px;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 10px;
+      background: #444;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #suggestion-box {
+      margin: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 90%;
+      max-width: 500px;
+    }
+    #suggestion-box input, #suggestion-box button {
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+    }
+    #suggestion-box input {
+      background: #1e1e1e;
+      color: white;
+    }
+    #suggestion-box button {
+      background: #444;
+      color: white;
+      cursor: pointer;
+    }
+    #suggestion-box button:hover {
+      background: #666;
+    }
+  </style>
 </head>
-<body class="bg-gray-900 text-white min-h-screen flex flex-col">
+<body>
+  <h1>Game Launcher</h1>
+  <div id="game-list"></div>
+  <button id="back-button" onclick="goBack()">⬅ Back</button>
+  <iframe id="game-frame"></iframe>
 
-  <!-- Header -->
-  <header class="p-4 bg-gray-800 text-center text-2xl font-bold shadow">
-    Game Launcher
-  </header>
-
-  <!-- Main content -->
-  <main id="main-content" class="flex-1 p-6 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-    <!-- Games will load here -->
-  </main>
-
-  <!-- Game Viewer -->
-  <section id="game-viewer" class="hidden flex-col flex-1">
-    <div class="flex justify-between items-center bg-gray-800 p-3">
-      <button id="back-btn" class="px-4 py-2 bg-red-500 rounded-lg">⬅ Back</button>
-      <a id="download-btn" href="#" download class="px-4 py-2 bg-blue-500 rounded-lg">⬇ Download</a>
-    </div>
-    <iframe id="game-frame" class="flex-1 w-full" style="height: calc(100vh - 100px);"></iframe>
-  </section>
+  <!-- Suggestion Box -->
+  <div id="suggestion-box">
+    <input type="text" id="suggestion-input" placeholder="Suggest a new game...">
+    <button onclick="sendSuggestion()">Submit Suggestion</button>
+  </div>
 
   <script>
+    const manifestUrl = "manifest.json"; // Make sure this file is in the same directory
+    const gameList = document.getElementById("game-list");
+    const gameFrame = document.getElementById("game-frame");
+    const backButton = document.getElementById("back-button");
+
     async function loadGames() {
-      const response = await fetch("games/manifest.json");
-      const gameFiles = await response.json(); // Array of file names
-      const container = document.getElementById("main-content");
+      try {
+        const response = await fetch(manifestUrl);
+        const games = await response.json();
 
-      gameFiles.forEach(file => {
-        // Skip non-HTML games (like Play.js)
-        if (!file.endsWith(".html")) return;
-
-        const gameName = file.replace(".html", ""); // remove extension
-        const card = document.createElement("div");
-        card.className = "bg-gray-800 p-4 rounded-xl shadow cursor-pointer hover:bg-gray-700 transition";
-        card.textContent = gameName;
-
-        card.addEventListener("click", () => openGame(file));
-        container.appendChild(card);
-      });
+        games.forEach(game => {
+          const button = document.createElement("button");
+          button.className = "game-button";
+          button.textContent = game.replace(".html", ""); // display name without .html
+          button.onclick = () => launchGame(game);
+          gameList.appendChild(button);
+        });
+      } catch (error) {
+        console.error("Error loading manifest:", error);
+      }
     }
 
-    function openGame(file) {
-      document.getElementById("main-content").classList.add("hidden");
-      document.getElementById("game-viewer").classList.remove("hidden");
-
-      const gameFrame = document.getElementById("game-frame");
-      gameFrame.src = "games/" + file;
-
-      const downloadBtn = document.getElementById("download-btn");
-      downloadBtn.href = "games/" + file;
+    function launchGame(gameFile) {
+      gameFrame.src = "games/" + gameFile;
+      gameFrame.style.display = "block";
+      backButton.style.display = "inline-block";
+      gameList.style.display = "none";
     }
 
-    document.getElementById("back-btn").addEventListener("click", () => {
-      document.getElementById("main-content").classList.remove("hidden");
-      document.getElementById("game-viewer").classList.add("hidden");
+    function goBack() {
+      gameFrame.style.display = "none";
+      backButton.style.display = "none";
+      gameList.style.display = "grid";
+      gameFrame.src = "";
+    }
 
-      document.getElementById("game-frame").src = "";
-    });
+    // Suggestion system with webhook
+    async function sendSuggestion() {
+      const input = document.getElementById("suggestion-input");
+      const suggestion = input.value.trim();
+      if (!suggestion) return;
+
+      try {
+        await fetch("https://discord.com/api/webhooks/1403226311761068153/ELBf82v6YvcHB7ZwHyQnfrnlgIkLepnfseowTv19Yw0dYm1KuTuLGyAK8XtaKnHjMn_5", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: `New game suggestion: ${suggestion}` })
+        });
+        alert("Suggestion sent! ✅");
+        input.value = "";
+      } catch (error) {
+        alert("Failed to send suggestion ❌");
+      }
+    }
 
     loadGames();
   </script>
-
 </body>
 </html>
