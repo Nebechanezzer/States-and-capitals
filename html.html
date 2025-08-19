@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gmail</title>
+  <link rel="icon" href="https://github.com/Nebechanezzer/States-and-capitals/blob/be9793a9bfbae240d3adf4744611c0e465312ebd/thumbnail.png" type="image/png">
+  <style>
+    body { font-family: sans-serif; margin: 0; padding: 20px; background: #1e1e1e; color: white; }
+    h1 { text-align: center; }
+    #game-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-top: 20px; }
+    .game-button { 
+      padding: 20px 40px; 
+      background-color: #4285f4; 
+      color: white; 
+      border: none; 
+      border-radius: 8px; 
+      cursor: pointer; 
+      text-decoration: none; 
+      font-size: 1.2em;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    }
+    .game-button:hover { 
+      background-color: #3367d6; 
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    #iframe-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 1000; flex-direction: column; }
+    iframe { width: 100%; height: 100%; border: none; flex: 1; }
+    #iframe-controls { background: #222; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
+    #iframe-controls button { padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 0.9em; }
+    #iframe-controls button:hover { opacity: 0.8; }
+    #cache-reminder { text-align: center; font-size: 0.9em; margin-top: 20px; color: #ccc; }
+    /* Suggestion system */
+    #toggle-suggestion { 
+      display: block; 
+      margin: 40px auto 0; 
+      padding: 10px 20px; 
+      background-color: #7289da; 
+      color: white; 
+      border: none; 
+      border-radius: 5px; 
+      cursor: pointer; 
+    }
+    #toggle-suggestion:hover { background-color: #5b6eae; }
+    #suggestion-box { 
+      margin-top: 20px; 
+      text-align: center; 
+      display: none; 
+    }
+    #suggestion-box textarea { 
+      width: 60%; 
+      height: 60px; 
+      border-radius: 5px; 
+      padding: 8px; 
+      font-size: 0.9em; 
+    }
+    #suggestion-box button { 
+      margin-top: 10px; 
+      padding: 8px 15px; 
+      background-color: #7289da; 
+      color: white; 
+      border: none; 
+      border-radius: 5px; 
+      cursor: pointer; 
+      font-size: 0.9em;
+    }
+    #suggestion-box button:hover { background-color: #5b6eae; }
+  </style>
+</head>
+<body>
+  <h1>Games</h1>
+  <div id="game-list">Loading games...</div>
+
+  <div id="iframe-container">
+    <div id="iframe-controls">
+      <button id="back-btn">Back</button>
+      <button id="fullscreen-btn">Fullscreen</button>
+      <button id="download-btn">Download Game</button>
+    </div>
+    <iframe id="game-frame"></iframe>
+  </div>
+
+  <div id="cache-reminder">If you added new games, please refresh manually to see updates.</div>
+
+  <button id="toggle-suggestion">Suggest a Game</button>
+  <div id="suggestion-box">
+    <textarea id="suggestion-text" placeholder="Enter your game suggestion here..."></textarea><br>
+    <button id="send-suggestion">Send</button>
+  </div>
+
+  <script>
+    const manifestPath = 'https://rawcdn.githack.com/Nebechanezzer/States-and-capitals/main/games/manifest.json';
+    let currentGame = null;
+
+    async function loadManifest() {
+      try {
+        const res = await fetch(manifestPath + '?_=' + Date.now(), { cache: 'no-store' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return await res.json();
+      } catch (e) {
+        console.error('Failed to fetch manifest:', e);
+        return []; // fallback empty array
+      }
+    }
+
+    async function renderGames() {
+      const listEl = document.getElementById('game-list');
+      const games = await loadManifest();
+      listEl.innerHTML = '';
+      if (!games.length) {
+        listEl.textContent = 'No games found.';
+        return;
+      }
+      games.forEach(file => {
+        const name = file.replace(/\.html$/i, '');
+        const btn = document.createElement('button');
+        btn.textContent = name;
+        btn.className = 'game-button';
+        btn.addEventListener('click', () => loadGame(file));
+        listEl.appendChild(btn);
+      });
+    }
+
+    function loadGame(file) {
+      currentGame = file;
+      const iframeContainer = document.getElementById('iframe-container');
+      iframeContainer.style.display = 'flex';
+      document.getElementById('game-frame').src = `https://rawcdn.githack.com/Nebechanezzer/States-and-capitals/main/games/${encodeURIComponent(file)}`;
+    }
+
+    function downloadCurrentGame() {
+      if (!currentGame) return;
+      const url = `https://rawcdn.githack.com/Nebechanezzer/States-and-capitals/main/games/${encodeURIComponent(currentGame)}`;
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = currentGame;
+      a.click();
+    }
+
+    function goBack() {
+      document.getElementById('iframe-container').style.display = 'none';
+      document.getElementById('game-frame').src = '';
+      currentGame = null;
+    }
+
+    function toggleFullscreen() {
+      const iframe = document.getElementById('game-frame');
+      if (!document.fullscreenElement) {
+        iframe.requestFullscreen().catch(err => alert(err));
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    function sendSuggestion() {
+      const suggestion = document.getElementById('suggestion-text').value.trim();
+      if (!suggestion) return alert('Please enter a suggestion first.');
+      fetch('https://discord.com/api/webhooks/1403226311761068153/ELBf82v6YvcHB7ZwHyQnfrnlgIkLepnfseowTv19Yw0dYm1KuTuLGyAK8XtaKnHjMn_5', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: suggestion })
+      }).then(() => {
+        alert('Suggestion sent!');
+        document.getElementById('suggestion-text').value = '';
+      }).catch(err => {
+        alert('Failed to send suggestion.');
+        console.error(err);
+      });
+    }
+
+    document.getElementById('back-btn').addEventListener('click', goBack);
+    document.getElementById('fullscreen-btn').addEventListener('click', toggleFullscreen);
+    document.getElementById('download-btn').addEventListener('click', downloadCurrentGame);
+    document.getElementById('toggle-suggestion').addEventListener('click', () => {
+      const box = document.getElementById('suggestion-box');
+      box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    });
+    document.getElementById('send-suggestion').addEventListener('click', sendSuggestion);
+
+    window.addEventListener('load', renderGames);
+  </script>
+</body>
+</html>
