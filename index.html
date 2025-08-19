@@ -2,156 +2,70 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Game Launcher</title>
-  <style>
-    :root {
-      --bg-color: #121212;
-      --text-color: #ffffff;
-      --button-bg: #1e1e1e;
-      --button-hover: #333333;
-    }
-    body.light {
-      --bg-color: #ffffff;
-      --text-color: #000000;
-      --button-bg: #f0f0f0;
-      --button-hover: #dddddd;
-    }
-    body {
-      font-family: Arial, sans-serif;
-      background: var(--bg-color);
-      color: var(--text-color);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-      transition: background 0.3s, color 0.3s;
-    }
-    h1 {
-      margin-bottom: 20px;
-    }
-    .controls {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    button {
-      background: var(--button-bg);
-      color: var(--text-color);
-      border: none;
-      padding: 10px 20px;
-      border-radius: 10px;
-      cursor: pointer;
-      font-size: 16px;
-    }
-    button:hover {
-      background: var(--button-hover);
-    }
-    #game-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-      width: 100%;
-      max-width: 800px;
-    }
-    .game-button {
-      padding: 20px;
-      border-radius: 12px;
-      text-align: center;
-      background: var(--button-bg);
-      cursor: pointer;
-      transition: background 0.3s;
-    }
-    .game-button:hover {
-      background: var(--button-hover);
-    }
-    #game-container {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      width: 100%;
-    }
-    #game-frame {
-      width: 100%;
-      height: 80vh;
-      border: none;
-      margin-bottom: 10px;
-    }
-  </style>
+  <title>Gmail</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-  <h1>Game Launcher</h1>
-  <div class="controls">
-    <button id="theme-toggle">Toggle Theme</button>
-  </div>
-  <div id="game-list"></div>
-  <div id="game-container">
-    <iframe id="game-frame"></iframe>
-    <div class="controls">
-      <button id="back-button">Back</button>
-      <button id="fullscreen-button">Fullscreen</button>
-      <a id="download-button" download><button>Download Game</button></a>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="p-4 bg-gray-800 text-center text-2xl font-bold shadow">
+    Game Launcher
+  </header>
+
+  <!-- Main content -->
+  <main id="main-content" class="flex-1 p-6 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+    <!-- Games will load here -->
+  </main>
+
+  <!-- Game Viewer -->
+  <section id="game-viewer" class="hidden flex-col flex-1">
+    <div class="flex justify-between items-center bg-gray-800 p-3">
+      <button id="back-btn" class="px-4 py-2 bg-red-500 rounded-lg">⬅ Back</button>
+      <a id="download-btn" href="#" download class="px-4 py-2 bg-blue-500 rounded-lg">⬇ Download</a>
     </div>
-  </div>
+    <iframe id="game-frame" class="flex-1 w-full" style="height: calc(100vh - 100px);"></iframe>
+  </section>
 
   <script>
-    const gameList = document.getElementById("game-list");
-    const gameContainer = document.getElementById("game-container");
-    const gameFrame = document.getElementById("game-frame");
-    const backButton = document.getElementById("back-button");
-    const fullscreenButton = document.getElementById("fullscreen-button");
-    const downloadButton = document.getElementById("download-button");
-    const themeToggle = document.getElementById("theme-toggle");
+    async function loadGames() {
+      const response = await fetch("games/manifest.json");
+      const gameFiles = await response.json(); // Array of file names
+      const container = document.getElementById("main-content");
 
-    // Always start in dark mode
-    document.body.classList.remove("light");
+      gameFiles.forEach(file => {
+        // Skip non-HTML games (like Play.js)
+        if (!file.endsWith(".html")) return;
 
-    async function loadManifest() {
-      try {
-        const response = await fetch("games/manifest.json?nocache=" + Date.now());
-        const games = await response.json();
-        displayGames(games);
-      } catch (e) {
-        console.error("Failed to load manifest:", e);
-      }
-    }
+        const gameName = file.replace(".html", ""); // remove extension
+        const card = document.createElement("div");
+        card.className = "bg-gray-800 p-4 rounded-xl shadow cursor-pointer hover:bg-gray-700 transition";
+        card.textContent = gameName;
 
-    function displayGames(games) {
-      gameList.innerHTML = "";
-      games.forEach(game => {
-        const button = document.createElement("div");
-        button.className = "game-button";
-        button.textContent = game.name;
-        button.onclick = () => launchGame("games/" + game.file, game.name);
-        gameList.appendChild(button);
+        card.addEventListener("click", () => openGame(file));
+        container.appendChild(card);
       });
     }
 
-    function launchGame(path, name) {
-      gameFrame.src = path;
-      downloadButton.href = path;
-      downloadButton.setAttribute("download", name + ".html");
-      gameList.style.display = "none";
-      gameContainer.style.display = "flex";
+    function openGame(file) {
+      document.getElementById("main-content").classList.add("hidden");
+      document.getElementById("game-viewer").classList.remove("hidden");
+
+      const gameFrame = document.getElementById("game-frame");
+      gameFrame.src = "games/" + file;
+
+      const downloadBtn = document.getElementById("download-btn");
+      downloadBtn.href = "games/" + file;
     }
 
-    backButton.onclick = () => {
-      gameFrame.src = "";
-      gameContainer.style.display = "none";
-      gameList.style.display = "grid";
-    };
+    document.getElementById("back-btn").addEventListener("click", () => {
+      document.getElementById("main-content").classList.remove("hidden");
+      document.getElementById("game-viewer").classList.add("hidden");
 
-    fullscreenButton.onclick = () => {
-      if (gameFrame.requestFullscreen) gameFrame.requestFullscreen();
-      else if (gameFrame.webkitRequestFullscreen) gameFrame.webkitRequestFullscreen();
-      else if (gameFrame.msRequestFullscreen) gameFrame.msRequestFullscreen();
-    };
+      document.getElementById("game-frame").src = "";
+    });
 
-    themeToggle.onclick = () => {
-      document.body.classList.toggle("light");
-    };
-
-    loadManifest();
+    loadGames();
   </script>
+
 </body>
 </html>
