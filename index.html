@@ -3,140 +3,176 @@
 <head>
   <meta charset="UTF-8">
   <title>Gmail</title>
-  <link rel="icon" type="image/png" href="thumbnail.png">
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #111;
+      background-color: #121212;
       color: #fff;
       margin: 0;
       padding: 0;
     }
     header {
+      background: #1f1f1f;
       padding: 15px;
       text-align: center;
       font-size: 24px;
       font-weight: bold;
     }
-    .grid {
+    .container {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 15px;
       padding: 20px;
     }
-    .card {
-      background: #222;
+    .game-card {
+      background: #1e1e1e;
       border-radius: 12px;
-      padding: 15px;
+      padding: 10px;
       text-align: center;
       transition: transform 0.2s;
-      position: relative;
     }
-    .card:hover {
+    .game-card:hover {
       transform: scale(1.05);
     }
-    .card h3 {
-      font-size: 16px;
-      margin: 10px 0;
-      color: #fff;
-      word-break: break-word;
-    }
-    .card button {
-      display: block;
+    .game-card img {
       width: 100%;
-      padding: 8px;
+      border-radius: 10px;
+    }
+    .buttons {
       margin-top: 8px;
+      display: flex;
+      justify-content: space-around;
+    }
+    .buttons button {
+      flex: 1;
+      margin: 0 3px;
+      padding: 8px;
       border: none;
       border-radius: 8px;
-      background: #007bff;
-      color: white;
       cursor: pointer;
-      font-size: 14px;
+      font-weight: bold;
+      transition: background 0.2s;
     }
-    .card button:hover {
-      background: #0056b3;
-    }
-    .fullscreen-iframe {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      border: none;
-      z-index: 9999;
-      display: none;
-    }
-    .close-btn {
-      position: fixed;
-      top: 15px;
-      right: 15px;
-      z-index: 10000;
-      background: red;
+    .play-btn {
+      background: #4caf50;
       color: white;
-      border: none;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      cursor: pointer;
-      font-size: 20px;
-      display: none;
     }
-    footer {
-      text-align: center;
-      padding: 15px;
-      font-size: 14px;
-      color: #bbb;
+    .play-btn:hover {
+      background: #45a049;
+    }
+    .download-btn {
+      background: #2196f3;
+      color: white;
+    }
+    .download-btn:hover {
+      background: #1e88e5;
+    }
+    .suggestion-box {
+      background: #1f1f1f;
+      padding: 20px;
+      margin: 20px;
+      border-radius: 10px;
+    }
+    .suggestion-box h2 {
+      margin-top: 0;
+    }
+    .suggestion-box input, .suggestion-box button {
+      padding: 10px;
+      margin-top: 10px;
+      width: 100%;
+      border-radius: 6px;
+      border: none;
+    }
+    .suggestion-box input {
+      background: #2a2a2a;
+      color: #fff;
+    }
+    .suggestion-box button {
+      background: #4caf50;
+      color: #fff;
+      cursor: pointer;
+    }
+    .suggestion-box button:hover {
+      background: #45a049;
     }
   </style>
 </head>
 <body>
-  <header>Gmail</header>
-  <div class="grid" id="gamesGrid"></div>
-  <iframe id="gameFrame" class="fullscreen-iframe"></iframe>
-  <button id="closeBtn" class="close-btn">×</button>
-  <footer>Made by Nebechanezzer<br><a href="html.html" download="html.html" style="color:#4da6ff;">⬇ Download Offline Version</a></footer>
+  <header>Games</header>
+  <div class="container" id="gameContainer"></div>
+
+  <div class="suggestion-box">
+    <h2>Suggest a Game</h2>
+    <input type="text" id="suggestionInput" placeholder="Enter your game suggestion...">
+    <button onclick="sendSuggestion()">Send Suggestion</button>
+  </div>
 
   <script>
     async function loadGames() {
-      const res = await fetch("games/manifest.json");
-      const files = await res.json();
-      const grid = document.getElementById("gamesGrid");
+      try {
+        const response = await fetch('games/manifest.json');
+        const games = await response.json();
+        const container = document.getElementById('gameContainer');
 
-      files.forEach(file => {
-        // Remove .html extension for title
-        const title = file.replace(/\.html$/i, "");
-        const card = document.createElement("div");
-        card.className = "card";
+        games.forEach(game => {
+          const card = document.createElement('div');
+          card.className = 'game-card';
 
-        card.innerHTML = `
-          <h3>${title}</h3>
-          <button onclick="playGame('games/${file}')">▶ Play</button>
-          <button onclick="downloadGame('games/${file}', '${file}')">⬇ Download</button>
-        `;
-        grid.appendChild(card);
-      });
+          const img = document.createElement('img');
+          img.src = `games/${game.folder}/thumbnail.png`;
+          img.alt = game.title;
+
+          const title = document.createElement('p');
+          title.textContent = game.title || 'Unknown';
+
+          const buttons = document.createElement('div');
+          buttons.className = 'buttons';
+
+          const playBtn = document.createElement('button');
+          playBtn.textContent = 'Play';
+          playBtn.className = 'play-btn';
+          playBtn.onclick = () => {
+            const win = window.open(`games/${game.folder}/index.html`, '_blank');
+            win.focus();
+            win.document.documentElement.requestFullscreen?.();
+          };
+
+          const downloadBtn = document.createElement('button');
+          downloadBtn.textContent = 'Download';
+          downloadBtn.className = 'download-btn';
+          downloadBtn.onclick = () => {
+            window.location.href = `games/${game.folder}/index.html`;
+          };
+
+          buttons.appendChild(playBtn);
+          buttons.appendChild(downloadBtn);
+
+          card.appendChild(img);
+          card.appendChild(title);
+          card.appendChild(buttons);
+          container.appendChild(card);
+        });
+      } catch (error) {
+        console.error('Error loading games:', error);
+      }
     }
 
-    function playGame(url) {
-      const iframe = document.getElementById("gameFrame");
-      const closeBtn = document.getElementById("closeBtn");
-      iframe.src = url;
-      iframe.style.display = "block";
-      closeBtn.style.display = "block";
-    }
+    async function sendSuggestion() {
+      const input = document.getElementById('suggestionInput');
+      const suggestion = input.value.trim();
+      if (!suggestion) return;
 
-    document.getElementById("closeBtn").onclick = () => {
-      const iframe = document.getElementById("gameFrame");
-      iframe.src = "";
-      iframe.style.display = "none";
-      document.getElementById("closeBtn").style.display = "none";
-    };
-
-    function downloadGame(url, filename) {
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      try {
+        await fetch("https://discord.com/api/webhooks/1403226311761068153/ELBf82v6YvcHB7ZwHyQnfrnlgIkLepnfseowTv19Yw0dYm1KuTuLGyAK8XtaKnHjMn_5", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: `New suggestion: ${suggestion}` })
+        });
+        input.value = '';
+        alert('Suggestion sent!');
+      } catch (err) {
+        console.error('Error sending suggestion:', err);
+      }
     }
 
     loadGames();
