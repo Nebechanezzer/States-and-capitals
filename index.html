@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <title>Gmail</title>
+  <link rel="icon" type="image/png" href="thumbnail.png">
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #121212;
+      background: #121212;
       color: #fff;
       margin: 0;
       padding: 0;
@@ -30,6 +31,7 @@
       padding: 10px;
       text-align: center;
       transition: transform 0.2s;
+      position: relative;
     }
     .game-card:hover {
       transform: scale(1.05);
@@ -37,15 +39,17 @@
     .game-card img {
       width: 100%;
       border-radius: 10px;
+      object-fit: cover;
+      display: block;
     }
     .buttons {
       margin-top: 8px;
       display: flex;
       justify-content: space-around;
+      gap: 8px;
     }
     .buttons button {
       flex: 1;
-      margin: 0 3px;
       padding: 8px;
       border: none;
       border-radius: 8px;
@@ -95,86 +99,213 @@
     .suggestion-box button:hover {
       background: #45a049;
     }
+    iframe.play-frame {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      z-index: 9999;
+      background: black;
+    }
+    .exit-btn {
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 10000;
+      padding: 10px 12px;
+      background: rgba(200,30,30,0.95);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      display: none;
+    }
   </style>
 </head>
 <body>
   <header>Games</header>
+
   <div class="container" id="gameContainer"></div>
 
   <div class="suggestion-box">
     <h2>Suggest a Game</h2>
     <input type="text" id="suggestionInput" placeholder="Enter your game suggestion...">
-    <button onclick="sendSuggestion()">Send Suggestion</button>
+    <button id="sendSuggestionBtn">Send Suggestion</button>
   </div>
 
+  <button id="exitBtn" class="exit-btn">Exit</button>
+
   <script>
+    // CONFIG
+    const MANIFEST_URL = 'games/manifest.json'; // manifest in games/
+    const DISCORD_WEBHOOK = 'https://discord.com/api/webhooks/1403226311761068153/ELBf82v6YvcHB7ZwHyQnfrnlgIkLepnfseowTv19Yw0dYm1KuTuLGyAK8XtaKnHjMn_5';
+
+    // state
+    let currentIframe = null;
+    const container = document.getElementById('gameContainer');
+    const exitBtn = document.getElementById('exitBtn');
+
+    // Utility to create element with attrs
+    function el(tag, attrs = {}, children = []) {
+      const e = document.createElement(tag);
+      for (const k in attrs) {
+        if (k === 'class') e.className = attrs[k];
+        else if (k === 'text') e.textContent = attrs[k];
+        else e.setAttribute(k, attrs[k]);
+      }
+      children.forEach(c => e.appendChild(c));
+      return e;
+    }
+
+    // Load manifest (supports array-of-strings or array-of-objects)
     async function loadGames() {
       try {
-        const response = await fetch('games/manifest.json');
-        const games = await response.json();
-        const container = document.getElementById('gameContainer');
+        const res = await fetch(MANIFEST_URL + '?_=' + Date.now());
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
 
-        games.forEach(game => {
-          const card = document.createElement('div');
-          card.className = 'game-card';
+        // Normalize into array of file-names or objects
+        // Possible formats:
+        // 1) ["Deltarune.html", "Undertale.html", ...]
+        // 2) [{ title: "Deltarune", file: "Deltarune.html" }, ...]
+        // 3) [{ title: "Deltarune", folder: "Deltarune", ... }, ...]  (legacy)
+        let entries = [];
 
-          const img = document.createElement('img');
-          img.src = `games/${game.folder}/thumbnail.png`;
-          img.alt = game.title;
+        if (Array.isArray(data) && data.length > 0 && typeof data[0] === 'string') {
+          // simple array of filenames
+          entries = data.map(fname => ({ title: fname.replace(/\.[^/.]+$/, ''), file: fname, folder: null }));
+        } else if (Array.isArray(data) && typeof data[0] === 'object') {
+          // already objects (title/file/folder)
+          entries = data.map(obj => {
+            // handle older shape where obj.file or obj.folder may differ
+            if (typeof obj === 'string') { // defensive
+              const fname = obj;
+              return { title: fname.replace(/\.[^/.]+$/, ''), file: fname, folder: null };
+            }
+            const file = obj.file || obj.path || obj.filename || (obj.folder ? (obj.folder + '/index.html') : null);
+            const title = obj.title || (typeof file === 'string' ? file.replace(/\.[^/.]+$/, '') : (obj.folder || 'Unknown'));
+            return { title, file, folder: obj.folder || null };
+          });
+        } else {
+          // unknown manifest shape — fail gracefully
+          console.warn('Unknown manifest shape, trying fallback.');
+        }
 
-          const title = document.createElement('p');
-          title.textContent = game.title || 'Unknown';
-
-          const buttons = document.createElement('div');
-          buttons.className = 'buttons';
-
-          const playBtn = document.createElement('button');
-          playBtn.textContent = 'Play';
-          playBtn.className = 'play-btn';
-          playBtn.onclick = () => {
-            const win = window.open(`games/${game.folder}/index.html`, '_blank');
-            win.focus();
-            win.document.documentElement.requestFullscreen?.();
-          };
-
-          const downloadBtn = document.createElement('button');
-          downloadBtn.textContent = 'Download';
-          downloadBtn.className = 'download-btn';
-          downloadBtn.onclick = () => {
-            window.location.href = `games/${game.folder}/index.html`;
-          };
-
-          buttons.appendChild(playBtn);
-          buttons.appendChild(downloadBtn);
-
-          card.appendChild(img);
-          card.appendChild(title);
-          card.appendChild(buttons);
-          container.appendChild(card);
-        });
-      } catch (error) {
-        console.error('Error loading games:', error);
+        renderGames(entries);
+      } catch (err) {
+        console.error('Failed to load manifest:', err);
       }
     }
 
-    async function sendSuggestion() {
-      const input = document.getElementById('suggestionInput');
-      const suggestion = input.value.trim();
-      if (!suggestion) return;
+    // Render game cards (keeps existing structure)
+    function renderGames(entries) {
+      container.innerHTML = '';
+      entries.forEach(entry => {
+        // entry: { title, file, folder }
+        const file = entry.file;
+        if (!file || (typeof file !== 'string')) return; // skip bad entries
+        // only show html files by default
+        if (!/\.html$/i.test(file)) return;
 
+        const title = entry.title || file.replace(/\.[^/.]+$/, '');
+        // try thumbnail at games/<title>/thumbnail.png or hide img if missing
+        const thumbPath = entry.folder ? `games/${entry.folder}/thumbnail.png` : `games/${title}/thumbnail.png`;
+
+        const img = el('img', { src: thumbPath, alt: title });
+        img.onerror = () => { img.style.display = 'none'; };
+
+        const titleEl = el('p', { text: title });
+
+        // Play button: opens in new window and attempts to request fullscreen there (best-effort)
+        const playBtn = el('button', { class: 'play-btn', text: 'Play' });
+        playBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          // open from games/ folder
+          const url = entry.folder ? `games/${entry.folder}/index.html` : `games/${encodeURIComponent(file)}`;
+          openGameFullscreen(url);
+        });
+
+        // Download button: direct download of the specific game's .html file
+        const downloadBtn = el('button', { class: 'download-btn', text: 'Download' });
+        downloadBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const url = entry.folder ? `games/${entry.folder}/index.html` : `games/${encodeURIComponent(file)}`;
+          forceDownload(url, file);
+        });
+
+        const buttons = el('div', { class: 'buttons' }, [playBtn, downloadBtn]);
+
+        const card = el('div', { class: 'game-card' }, []);
+        card.appendChild(img);
+        card.appendChild(titleEl);
+        card.appendChild(buttons);
+
+        container.appendChild(card);
+      });
+    }
+
+    // Open a game fullscreen overlay (iframe) with exit button
+    function openGameFullscreen(url) {
+      // create iframe
+      if (currentIframe) return; // already open
+      const iframe = document.createElement('iframe');
+      iframe.className = 'play-frame';
+      iframe.src = url;
+      document.body.appendChild(iframe);
+      currentIframe = iframe;
+
+      // show exit button
+      exitBtn.style.display = 'block';
+
+      // attempt to request fullscreen for the iframe element (best-effort)
+      iframe.addEventListener('load', () => {
+        // nothing required; user can click exit to return
+      });
+    }
+
+    // Close overlay
+    exitBtn.addEventListener('click', () => {
+      if (currentIframe) {
+        currentIframe.remove();
+        currentIframe = null;
+      }
+      exitBtn.style.display = 'none';
+    });
+
+    // Force-download helper
+    function forceDownload(url, filename) {
+      // create an anchor and click it. This works for same-origin or direct file links; for cross-origin
+      // raw GitHub files, the browser may open them instead. Still this triggers download attribute where possible.
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename || '';
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    // Suggestion box -> Discord webhook
+    document.getElementById('sendSuggestionBtn').addEventListener('click', async () => {
+      const input = document.getElementById('suggestionInput');
+      const val = input.value.trim();
+      if (!val) return alert('Please enter a suggestion.');
       try {
-        await fetch("https://discord.com/api/webhooks/1403226311761068153/ELBf82v6YvcHB7ZwHyQnfrnlgIkLepnfseowTv19Yw0dYm1KuTuLGyAK8XtaKnHjMn_5", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content: `New suggestion: ${suggestion}` })
+        await fetch(DISCORD_WEBHOOK, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: `New suggestion: ${val}` })
         });
         input.value = '';
         alert('Suggestion sent!');
       } catch (err) {
-        console.error('Error sending suggestion:', err);
+        console.error('Failed to send suggestion', err);
+        alert('Failed to send suggestion.');
       }
-    }
+    });
 
+    // initialize
     loadGames();
   </script>
 </body>
