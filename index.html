@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gmail</title>
+  <link rel="icon" href="games/thumbnail.png" type="image/png">
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -38,13 +39,14 @@
       flex: 1;
     }
     .game-button {
-      padding: 10px 20px;
+      padding: 15px 25px;
       background: #444;
       border: none;
       border-radius: 8px;
       color: white;
       cursor: pointer;
       transition: 0.2s;
+      font-size: 1.1em;
     }
     .game-button:hover {
       background: #666;
@@ -66,42 +68,42 @@
   <iframe id="game-frame"></iframe>
 
   <script>
-    const WEBHOOK_URL = "https://discord.com/api/webhooks/1403226311761068153/ELBf82v6YvcHB7ZwHyQnfrnlgIkLepnfseowTv19Yw0dYm1KuTuLGyAK8XtaKnHjMn_5"; // replace with your webhook
+    const WEBHOOK_URL = "https://discord.com/api/webhooks/1403226311761068153/ELBf82v6YvcHB7ZwHyQnfrnlgIkLepnfseowTv19Yw0dYm1KuTuLGyAK8XtaKnHjMn_5";
+    const MANIFEST_PATH = "games/manifest.json"; // include folder
 
     async function loadGames() {
-      const response = await fetch("manifest.json");
-      const files = await response.json(); // now it's just ["Undertale.html", "Celeste.html", ...]
+      try {
+        const response = await fetch(MANIFEST_PATH + '?_=' + Date.now());
+        const files = await response.json(); // ["Undertale.html", "Celeste.html", ...]
 
-      const gameList = document.getElementById("game-list");
-      const searchInput = document.getElementById("search");
+        const gameList = document.getElementById("game-list");
+        const searchInput = document.getElementById("search");
 
-      function renderGames(filter = "") {
-        gameList.innerHTML = "";
-        files
-          .filter(file => file.toLowerCase().includes(filter.toLowerCase()))
-          .forEach(file => {
-            const name = file.replace(".html", "");
+        function renderGames(filter = "") {
+          gameList.innerHTML = "";
+          files
+            .filter(file => file.toLowerCase().includes(filter.toLowerCase()))
+            .forEach(file => {
+              const name = file.replace(".html", "");
+              const button = document.createElement("button");
+              button.textContent = name;
+              button.className = "game-button";
 
-            const button = document.createElement("button");
-            button.textContent = name;
-            button.className = "game-button";
+              button.onclick = () => {
+                document.getElementById("game-frame").src = 'games/' + file; // correct folder path
+                logToWebhook(name);
+              };
 
-            button.onclick = () => {
-              document.getElementById("game-frame").src = file;
-              logToWebhook(name);
-            };
+              gameList.appendChild(button);
+            });
+        }
 
-            gameList.appendChild(button);
-          });
+        searchInput.addEventListener("input", e => renderGames(e.target.value));
+        renderGames();
+      } catch (err) {
+        console.error("Failed to load manifest:", err);
+        document.getElementById("game-list").textContent = "Failed to load games.";
       }
-
-      // Search filter
-      searchInput.addEventListener("input", e => {
-        renderGames(e.target.value);
-      });
-
-      // Initial render
-      renderGames();
     }
 
     function logToWebhook(gameName) {
