@@ -2,126 +2,91 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gmail</title>
+  <title>Game Library</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
       background: #1e1e1e;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      height: 100vh;
-    }
-    header {
-      padding: 15px;
-      background: #333;
+      color: #f5f5f5;
       text-align: center;
-      font-size: 1.5em;
+      padding: 20px;
     }
-    #game-list {
-      flex: 1;
-      overflow-y: auto;
-      background: #252525;
-      padding: 10px;
+    h1 {
+      margin-bottom: 20px;
     }
-    .game-button {
+    #games {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 15px;
+      max-width: 1200px;
+      margin: auto;
+    }
+    .game-card {
+      background: #2b2b2b;
+      border-radius: 12px;
+      padding: 15px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+    .game-card h3 {
+      margin: 10px 0;
+      font-size: 18px;
+    }
+    .btn {
       display: block;
-      width: 100%;
-      padding: 10px;
-      margin: 5px 0;
-      background: #444;
-      border: none;
-      color: #fff;
-      text-align: left;
-      cursor: pointer;
-      border-radius: 8px;
-      transition: background 0.2s;
-    }
-    .game-button:hover {
-      background: #666;
-    }
-    #game-container {
-      flex: 3;
-      background: #000;
-      display: flex;
-      flex-direction: column;
-    }
-    iframe {
-      flex: 1;
-      width: 100%;
-      border: none;
-    }
-    #controls {
-      background: #222;
+      margin: 6px 0;
       padding: 8px;
-      text-align: right;
-    }
-    #fullscreen-btn {
-      padding: 8px 12px;
       border: none;
-      border-radius: 6px;
-      background: #555;
+      border-radius: 8px;
+      background: #0078d7;
       color: white;
+      font-size: 14px;
       cursor: pointer;
-      transition: background 0.2s;
+      text-decoration: none;
+      transition: 0.2s;
     }
-    #fullscreen-btn:hover {
-      background: #777;
+    .btn:hover {
+      background: #005a9e;
+    }
+    .download {
+      background: #28a745;
+    }
+    .download:hover {
+      background: #1e7e34;
     }
   </style>
 </head>
 <body>
-  <header>🎮 Game Launcher</header>
-
-  <div style="display:flex; flex:1;">
-    <div id="game-list"></div>
-    <div id="game-container">
-      <div id="controls">
-        <button id="fullscreen-btn">⛶ Fullscreen</button>
-      </div>
-      <iframe id="game-frame"></iframe>
-    </div>
-  </div>
+  <h1>Game Library</h1>
+  <div id="games">Loading games...</div>
 
   <script>
     async function loadGames() {
       try {
-        // Fetch from /games/manifest.json
-        const response = await fetch("games/manifest.json");
-        const games = await response.json();
+        // Fetch manifest.json from the games folder
+        const res = await fetch("games/manifest.json");
+        const manifest = await res.json();
+        const container = document.getElementById("games");
+        container.innerHTML = "";
 
-        const gameList = document.getElementById("game-list");
-        const gameFrame = document.getElementById("game-frame");
+        manifest.forEach(file => {
+          // Remove file extension for display
+          const name = file.replace(".html", "").replace(".js", "");
+          const gameCard = document.createElement("div");
+          gameCard.className = "game-card";
 
-        games.forEach(game => {
-          const button = document.createElement("button");
-          button.className = "game-button";
-          button.textContent = game.replace(".html", "");
-          button.onclick = () => {
-            gameFrame.src = "games/" + game;
-          };
-          gameList.appendChild(button);
+          gameCard.innerHTML = `
+            <h3>${name}</h3>
+            <a class="btn" href="games/${file}" target="_blank">Play Game</a>
+            <a class="btn download" href="games/${file}" download>Download Game</a>
+          `;
+
+          container.appendChild(gameCard);
         });
-
-      } catch (error) {
-        console.error("Failed to load manifest.json", error);
+      } catch (e) {
+        document.getElementById("games").innerHTML = 
+          "Failed to load manifest.json. Please make sure it exists in the /games folder.";
       }
     }
-
-    // Fullscreen support
-    document.getElementById("fullscreen-btn").addEventListener("click", () => {
-      const iframe = document.getElementById("game-frame");
-      if (iframe.requestFullscreen) {
-        iframe.requestFullscreen();
-      } else if (iframe.webkitRequestFullscreen) {
-        iframe.webkitRequestFullscreen();
-      } else if (iframe.msRequestFullscreen) {
-        iframe.msRequestFullscreen();
-      }
-    });
 
     loadGames();
   </script>
