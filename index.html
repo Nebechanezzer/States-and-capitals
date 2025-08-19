@@ -1,118 +1,103 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gmail</title>
-  <link rel="icon" type="image/png" href="thumbnail.png">
+  <link rel="icon" href="thumbnail.png" />
   <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #111; color: #fff; }
-    header { display: flex; justify-content: space-between; align-items: center; background: #222; padding: 10px; }
-    header h1 { margin: 0; font-size: 20px; }
-    #search { padding: 5px; width: 200px; }
-    #game-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; padding: 15px; }
-    .game-card { background: #333; padding: 10px; border-radius: 8px; text-align: center; cursor: pointer; transition: 0.2s; }
-    .game-card:hover { background: #444; }
-    .game-card img { width: 100%; border-radius: 5px; }
-    #game-frame-container { 
-      display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-      background: rgba(0,0,0,0.95); z-index: 9999; 
-      flex-direction: column;
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: white;
+      text-align: center;
+      margin: 0;
+      padding: 0;
     }
-    #game-frame { flex: 1; width: 100%; border: none; }
-    #controls { display: flex; justify-content: space-between; padding: 10px; background: #111; }
-    #suggestions { padding: 15px; }
-    footer { background: #222; padding: 10px; text-align: center; font-size: 14px; }
-    button { background: #555; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; }
-    button:hover { background: #777; }
+    h1 {
+      margin-top: 20px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 15px;
+      padding: 20px;
+    }
+    .card {
+      background: #222;
+      border-radius: 12px;
+      padding: 10px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .card:hover {
+      transform: scale(1.05);
+    }
+    iframe {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      border: none;
+      z-index: 9999;
+      background: black;
+    }
+    button {
+      background: #444;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      margin: 10px;
+    }
+    button:hover {
+      background: #666;
+    }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Games</h1>
-    <div>
-      <input type="text" id="search" placeholder="Search games...">
-      <button onclick="downloadOffline()">Download Offline</button>
-    </div>
-  </header>
+  <h1>Game Library</h1>
+  <button onclick="downloadOffline()">Download Offline Version</button>
+  <button onclick="suggestion()">Suggest a Game</button>
+  <p>Made by Nebechanezzer</p>
 
-  <main>
-    <div id="game-list"></div>
-    <div id="suggestions">
-      <p>Suggestions will appear here...</p>
-    </div>
-  </main>
-
-  <footer>
-    Made by Nebechanezzer
-  </footer>
-
-  <!-- Fullscreen Game Frame -->
-  <div id="game-frame-container">
-    <div id="controls">
-      <button onclick="closeGame()">Back</button>
-      <button onclick="toggleFullscreen()">Fullscreen</button>
-    </div>
-    <iframe id="game-frame"></iframe>
-  </div>
+  <div class="grid" id="games"></div>
 
   <script>
-    const repoUrl = "games/manifest.json"; // manifest is inside games/
-    const gameListEl = document.getElementById("game-list");
-    const searchInput = document.getElementById("search");
-    const gameFrameContainer = document.getElementById("game-frame-container");
-    const gameFrame = document.getElementById("game-frame");
+    const manifestUrl = "games/manifest.json";
+    const webhookUrl = "https://discord.com/api/webhooks/1403226311761068153/ELBf82v6YvcHB7ZwHyQnfrnlgIkLepnfseowTv19Yw0dYm1KuTuLGyAK8XtaKnHjMn_5";
 
-    async function loadGames() {
-      try {
-        const res = await fetch(repoUrl);
-        const games = await res.json();
-        displayGames(games);
-      } catch (err) {
-        console.error("Error loading manifest:", err);
-      }
-    }
-
-    function displayGames(games) {
-      gameListEl.innerHTML = "";
-      games.forEach(game => {
-        const card = document.createElement("div");
-        card.className = "game-card";
-        card.innerHTML = `
-          <img src="${game.thumbnail}" alt="${game.name}">
-          <p>${game.name}</p>
-        `;
-        card.onclick = () => openGame(game.url);
-        gameListEl.appendChild(card);
-      });
-
-      searchInput.addEventListener("input", () => {
-        const query = searchInput.value.toLowerCase();
-        document.querySelectorAll(".game-card").forEach(card => {
-          const name = card.innerText.toLowerCase();
-          card.style.display = name.includes(query) ? "block" : "none";
+    // Load manifest and display games
+    fetch(manifestUrl)
+      .then(res => res.json())
+      .then(files => {
+        const container = document.getElementById("games");
+        container.innerHTML = "";
+        files.forEach(file => {
+          const title = file.replace(/\.[^/.]+$/, ""); // remove extension
+          const card = document.createElement("div");
+          card.className = "card";
+          card.innerHTML = `<h3>${title}</h3>`;
+          card.onclick = () => launchGame("games/" + file);
+          container.appendChild(card);
         });
+      })
+      .catch(err => console.error("Error loading manifest:", err));
+
+    // Launch game fullscreen
+    function launchGame(url) {
+      const iframe = document.createElement("iframe");
+      iframe.src = url;
+      document.body.appendChild(iframe);
+      iframe.focus();
+      iframe.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") iframe.remove();
       });
     }
 
-    function openGame(url) {
-      gameFrame.src = url;
-      gameFrameContainer.style.display = "flex";
-    }
-
-    function closeGame() {
-      gameFrame.src = "";
-      gameFrameContainer.style.display = "none";
-    }
-
-    function toggleFullscreen() {
-      if (!document.fullscreenElement) {
-        gameFrameContainer.requestFullscreen().catch(err => console.error(err));
-      } else {
-        document.exitFullscreen();
-      }
-    }
-
+    // Download offline version (html.html from repo root)
     function downloadOffline() {
       const a = document.createElement("a");
       a.href = "html.html";
@@ -120,7 +105,17 @@
       a.click();
     }
 
-    loadGames();
+    // Send suggestion to Discord webhook
+    function suggestion() {
+      const game = prompt("Enter the name of the game you want to suggest:");
+      if (!game) return;
+      fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content: `Game Suggestion: ${game}` })
+      }).then(() => alert("Suggestion sent!"))
+      .catch(() => alert("Failed to send suggestion"));
+    }
   </script>
 </body>
 </html>
