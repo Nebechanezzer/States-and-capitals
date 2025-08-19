@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gmail</title>
-  <link rel="icon" href="games/thumbnail.png" type="image/png" sizes="200x200">
+  <link rel="icon" href="games/thumbnail.png" type="image/png" sizes="32x32">
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -39,14 +39,14 @@
       justify-content: center;
     }
     .game-button {
-      padding: 18px 30px;
+      padding: 22px 40px;
       background: #444;
       border: none;
       border-radius: 8px;
       color: white;
       cursor: pointer;
       transition: 0.2s;
-      font-size: 1.2em;
+      font-size: 1.3em;
     }
     .game-button:hover {
       background: #666;
@@ -54,20 +54,28 @@
     }
     #iframe-container {
       display: none;
-      flex-direction: column;
+      position: fixed;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
+      flex-direction: column;
+      z-index: 1000;
+      background: black;
     }
     iframe {
-      border: none;
       flex: 1;
       width: 100%;
+      height: 100%;
+      border: none;
     }
     #iframe-controls {
+      position: absolute;
+      top: 10px;
+      right: 10px;
       display: flex;
-      justify-content: space-between;
-      background: #333;
-      padding: 8px 12px;
+      gap: 8px;
+      z-index: 1001;
     }
     #iframe-controls button {
       padding: 8px 12px;
@@ -77,9 +85,8 @@
       color: white;
       cursor: pointer;
     }
-    #iframe-controls button:hover {
-      background: #3367d6;
-    }
+    #iframe-controls button:hover { background: #3367d6; }
+
     #toggle-suggestion {
       display: block;
       margin: 10px auto;
@@ -124,12 +131,12 @@
   <div id="game-list">Loading games...</div>
 
   <div id="iframe-container">
+    <iframe id="game-frame"></iframe>
     <div id="iframe-controls">
       <button id="back-btn">Back</button>
       <button id="fullscreen-btn">Fullscreen</button>
       <button id="download-btn">Download Game</button>
     </div>
-    <iframe id="game-frame"></iframe>
   </div>
 
   <button id="toggle-suggestion">Suggest a Game</button>
@@ -145,8 +152,8 @@
 
     async function loadManifest() {
       try {
-        const res = await fetch(MANIFEST_PATH + '?_=' + Date.now());
-        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const res = await fetch(MANIFEST_PATH + "?_=" + Date.now());
+        if (!res.ok) throw new Error("HTTP " + res.status);
         return await res.json();
       } catch (err) {
         console.error("Failed to fetch manifest:", err);
@@ -183,7 +190,6 @@
       document.getElementById("game-list").style.display = "none";
       document.getElementById("iframe-container").style.display = "flex";
       document.getElementById("game-frame").src = "games/" + file;
-      logWebhook(file);
     }
 
     document.getElementById("back-btn").addEventListener("click", () => {
@@ -213,14 +219,6 @@
           URL.revokeObjectURL(url);
         });
     });
-
-    function logWebhook(gameName) {
-      fetch(WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: `Game launched: ${gameName}` })
-      }).catch(err => console.error(err));
-    }
 
     document.getElementById("toggle-suggestion").addEventListener("click", () => {
       const box = document.getElementById("suggestion-box");
