@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Gmail</title>
-  <link rel="icon" type="image/png" href="thumbnail.png">
+  <link rel="icon" type="image/png" href="https://nebechanezzer.github.io/States-and-capitals/thumbnail.png">
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -19,7 +19,7 @@
       font-size: 24px;
       font-weight: bold;
     }
-    .top-actions { text-align: center; padding: 12px 20px; }
+    .top-actions { text-align: center; padding: 12px 20px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
     .top-actions button { background:#2b2b2b; color:#fff; border:none; padding:10px 14px; border-radius:8px; cursor:pointer; }
     .top-actions button:hover { background:#3a3a3a; }
     .container {
@@ -59,7 +59,8 @@
   <header>Games</header>
 
   <div class="top-actions">
-    <button id="downloadStandaloneBtn">⬇ Download standalone</button>
+    <button id="downloadStandaloneBtn">⬇ Download Standalone</button>
+    <button id="newsBtn">📰 News</button>
   </div>
 
   <div class="container" id="gameContainer"></div>
@@ -74,15 +75,16 @@
 
   <script>
     // CONFIG
-    const MANIFEST_URL = 'games/manifest.json';
+    const MANIFEST_URL = 'https://raw.githubusercontent.com/nebechanezzer/States-and-capitals/main/games/manifest.json';
+    const BASE_URL = 'https://nebechanezzer.github.io/States-and-capitals/games/';
     const DISCORD_WEBHOOK = 'https://discord.com/api/webhooks/1403226311761068153/ELBf82v6YvcHB7ZwHyQnfrnlgIkLepnfseowTv19Yw0dYm1KuTuLGyAK8XtaKnHjMn_5';
+    const NEWS_URL = 'https://raw.githubusercontent.com/nebechanezzer/States-and-capitals/main/news.json';
 
     // state
     let currentIframe = null;
     const container = document.getElementById('gameContainer');
     const exitBtn = document.getElementById('exitBtn');
 
-    // create element helper
     function el(tag, attrs = {}, children = []) {
       const e = document.createElement(tag);
       for (const k in attrs) {
@@ -94,7 +96,6 @@
       return e;
     }
 
-    // Load manifest (supports array-of-strings or array-of-objects)
     async function loadGames() {
       try {
         const res = await fetch(MANIFEST_URL + '?_=' + Date.now());
@@ -102,16 +103,13 @@
         const data = await res.json();
 
         let entries = [];
-        if (Array.isArray(data) && data.length > 0 && typeof data[0] === 'string') {
+        if (Array.isArray(data) && typeof data[0] === 'string') {
           entries = data.map(fname => ({ title: fname.replace(/\.[^/.]+$/, ''), file: fname, folder: null }));
-        } else if (Array.isArray(data) && typeof data[0] === 'object') {
+        } else {
           entries = data.map(obj => {
-            if (typeof obj === 'string') {
-              const fname = obj;
-              return { title: fname.replace(/\.[^/.]+$/, ''), file: fname, folder: null };
-            }
+            if (typeof obj === 'string') return { title: obj.replace(/\.[^/.]+$/, ''), file: obj, folder: null };
             const file = obj.file || obj.path || obj.filename || (obj.folder ? (obj.folder + '/index.html') : null);
-            const title = obj.title || (typeof file === 'string' ? file.replace(/\.[^/.]+$/, '') : (obj.folder || 'Unknown'));
+            const title = obj.title || (file ? file.replace(/\.[^/.]+$/, '') : (obj.folder || 'Unknown'));
             return { title, file, folder: obj.folder || null };
           });
         }
@@ -122,16 +120,16 @@
       }
     }
 
-    // Render game cards
     function renderGames(entries) {
       container.innerHTML = '';
       entries.forEach(entry => {
         const file = entry.file;
-        if (!file || typeof file !== 'string') return;
-        if (!/\.html$/i.test(file)) return;
+        if (!file || !/\.html$/i.test(file)) return;
 
-        const title = entry.title || file.replace(/\.[^/.]+$/, '');
-        const thumbPath = entry.folder ? `games/${entry.folder}/thumbnail.png` : `games/${encodeURIComponent(title)}/thumbnail.png`;
+        const title = entry.title;
+        const thumbPath = entry.folder ? 
+          `${BASE_URL}${entry.folder}/thumbnail.png` : 
+          `${BASE_URL}${title}/thumbnail.png`;
 
         const img = el('img', { src: thumbPath, alt: title });
         img.onerror = () => { img.style.display = 'none'; };
@@ -139,16 +137,14 @@
         const titleEl = el('p', { text: title });
 
         const playBtn = el('button', { class: 'play-btn', text: 'Play' });
-        playBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const url = entry.folder ? `games/${entry.folder}/index.html` : `games/${encodeURIComponent(file)}`;
+        playBtn.addEventListener('click', () => {
+          const url = entry.folder ? `${BASE_URL}${entry.folder}/index.html` : `${BASE_URL}${file}`;
           openGameFullscreen(url);
         });
 
         const downloadBtn = el('button', { class: 'download-btn', text: 'Download' });
-        downloadBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const url = entry.folder ? `games/${entry.folder}/index.html` : `games/${encodeURIComponent(file)}`;
+        downloadBtn.addEventListener('click', () => {
+          const url = entry.folder ? `${BASE_URL}${entry.folder}/index.html` : `${BASE_URL}${file}`;
           forceDownload(url, file);
         });
 
@@ -163,7 +159,6 @@
       });
     }
 
-    // Open a game fullscreen overlay (iframe) with exit button
     function openGameFullscreen(url) {
       if (currentIframe) return;
       const iframe = document.createElement('iframe');
@@ -174,7 +169,6 @@
       exitBtn.style.display = 'block';
     }
 
-    // Close overlay
     exitBtn.addEventListener('click', () => {
       if (currentIframe) {
         currentIframe.remove();
@@ -183,7 +177,6 @@
       exitBtn.style.display = 'none';
     });
 
-    // Force-download helper
     function forceDownload(url, filename) {
       const a = document.createElement('a');
       a.href = url;
@@ -194,7 +187,6 @@
       document.body.removeChild(a);
     }
 
-    // Suggestion box -> Discord webhook
     document.getElementById('sendSuggestionBtn').addEventListener('click', async () => {
       const input = document.getElementById('suggestionInput');
       const val = input.value.trim();
@@ -213,12 +205,21 @@
       }
     });
 
-    // Download standalone html.html (from same folder)
     document.getElementById('downloadStandaloneBtn').addEventListener('click', () => {
       forceDownload('html.html', 'html.html');
     });
 
-    // initialize
+    document.getElementById('newsBtn').addEventListener('click', async () => {
+      try {
+        const res = await fetch(NEWS_URL + '?_=' + Date.now());
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const newsData = await res.json();
+        alert("📰 News:\n\n" + newsData.join("\n\n"));
+      } catch (err) {
+        alert("Failed to fetch news.");
+      }
+    });
+
     loadGames();
   </script>
 </body>
