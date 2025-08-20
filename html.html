@@ -2,184 +2,225 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gmail</title>
-  <link rel="icon" href="https://github.com/Nebechanezzer/States-and-capitals/blob/be9793a9bfbae240d3adf4744611c0e465312ebd/thumbnail.png" type="image/png">
+  <title>Grades & Attendance</title>
+  <link rel="icon" type="image/png" href="https://nebechanezzer.github.io/States-and-capitals/thumbnail.png">
   <style>
-    body { font-family: sans-serif; margin: 0; padding: 20px; background: #1e1e1e; color: white; }
-    h1 { text-align: center; }
-    #game-list { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; margin-top: 20px; }
-    .game-button { 
-      padding: 20px 40px; 
-      background-color: #4285f4; 
-      color: white; 
-      border: none; 
-      border-radius: 8px; 
-      cursor: pointer; 
-      text-decoration: none; 
-      font-size: 1.2em;
-      transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    body {
+      font-family: Arial, sans-serif;
+      background: #121212;
+      color: #fff;
+      margin: 0;
+      padding: 0;
     }
-    .game-button:hover { 
-      background-color: #3367d6; 
-      transform: scale(1.05);
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    header {
+      background: #1f1f1f;
+      padding: 15px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
     }
-    #iframe-container { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 1000; flex-direction: column; }
-    iframe { width: 100%; height: 100%; border: none; flex: 1; }
-    #iframe-controls { background: #222; padding: 10px; display: flex; justify-content: space-between; align-items: center; }
-    #iframe-controls button { padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 0.9em; }
-    #iframe-controls button:hover { opacity: 0.8; }
-    #cache-reminder { text-align: center; font-size: 0.9em; margin-top: 20px; color: #ccc; }
-    /* Suggestion system */
-    #toggle-suggestion { 
-      display: block; 
-      margin: 40px auto 0; 
-      padding: 10px 20px; 
-      background-color: #7289da; 
-      color: white; 
-      border: none; 
-      border-radius: 5px; 
-      cursor: pointer; 
+    .top-actions { text-align: center; padding: 12px 20px; display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+    .top-actions button { background:#2b2b2b; color:#fff; border:none; padding:10px 14px; border-radius:8px; cursor:pointer; }
+    .top-actions button:hover { background:#3a3a3a; }
+    .container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 15px;
+      padding: 20px;
     }
-    #toggle-suggestion:hover { background-color: #5b6eae; }
-    #suggestion-box { 
-      margin-top: 20px; 
-      text-align: center; 
-      display: none; 
+    .game-card {
+      background: #1e1e1e;
+      border-radius: 12px;
+      padding: 10px;
+      text-align: center;
+      transition: transform 0.2s;
+      position: relative;
     }
-    #suggestion-box textarea { 
-      width: 60%; 
-      height: 60px; 
-      border-radius: 5px; 
-      padding: 8px; 
-      font-size: 0.9em; 
-    }
-    #suggestion-box button { 
-      margin-top: 10px; 
-      padding: 8px 15px; 
-      background-color: #7289da; 
-      color: white; 
-      border: none; 
-      border-radius: 5px; 
-      cursor: pointer; 
-      font-size: 0.9em;
-    }
-    #suggestion-box button:hover { background-color: #5b6eae; }
+    .game-card:hover { transform: scale(1.05); }
+    .game-card img { width: 100%; border-radius: 10px; object-fit: cover; display: block; }
+    .buttons { margin-top: 8px; display:flex; gap:8px; }
+    .buttons button { flex:1; padding:8px; border:none; border-radius:8px; cursor:pointer; font-weight:bold; }
+    .play-btn { background:#4caf50; color:#fff; }
+    .play-btn:hover { background:#45a049; }
+    .download-btn { background:#2196f3; color:#fff; }
+    .download-btn:hover { background:#1e88e5; }
+    .suggestion-box { background:#1f1f1f; padding:20px; margin:20px; border-radius:10px; }
+    .suggestion-box h2 { margin-top:0; }
+    .suggestion-box input, .suggestion-box button { padding:10px; margin-top:10px; width:100%; border-radius:6px; border:none; }
+    .suggestion-box input { background:#2a2a2a; color:#fff; }
+    .suggestion-box button { background:#4caf50; color:#fff; cursor:pointer; }
+    .suggestion-box button:hover { background:#45a049; }
+    iframe.play-frame { position: fixed; top: 0; left: 0; width: 100%; height: 100%; border: none; z-index: 9999; background:black; }
+    .exit-btn { position: fixed; top: 12px; right: 12px; z-index: 10000; padding:10px 12px; background: rgba(200,30,30,0.95); color:white; border:none; border-radius:8px; cursor:pointer; display:none; }
+    footer { text-align:center; padding:16px 10px; color:#bbb; }
   </style>
 </head>
 <body>
-  <h1>Games</h1>
-  <div id="game-list">Loading games...</div>
+  <header>Games</header>
 
-  <div id="iframe-container">
-    <div id="iframe-controls">
-      <button id="back-btn">Back</button>
-      <button id="fullscreen-btn">Fullscreen</button>
-      <button id="download-btn">Download Game</button>
-    </div>
-    <iframe id="game-frame"></iframe>
+  <div class="top-actions">
+    <button id="downloadStandaloneBtn">⬇ Download Standalone</button>
+    <button id="newsBtn">📰 News</button>
   </div>
 
-  <div id="cache-reminder">Made by Nebechanezzer</div>
+  <div class="container" id="gameContainer"></div>
 
-  <button id="toggle-suggestion">Suggest a Game</button>
-  <div id="suggestion-box">
-    <textarea id="suggestion-text" placeholder="Enter your game suggestion here..."></textarea><br>
-    <button id="send-suggestion">Send</button>
+  <div class="suggestion-box">
+    <h2>Suggest a Game</h2>
+    <input type="text" id="suggestionInput" placeholder="Made by Nebechanezzer">
+    <button id="sendSuggestionBtn">Send Suggestion</button>
   </div>
+
+  <button id="exitBtn" class="exit-btn">Exit</button>
 
   <script>
-    const manifestPath = 'https://rawcdn.githack.com/Nebechanezzer/States-and-capitals/main/games/manifest.json';
-    let currentGame = null;
+    // CONFIG
+    const MANIFEST_URL = 'https://raw.githubusercontent.com/nebechanezzer/States-and-capitals/main/games/manifest.json';
+    const BASE_URL = 'https://nebechanezzer.github.io/States-and-capitals/games/';
+    const DISCORD_WEBHOOK = 'https://discord.com/api/webhooks/1403226311761068153/ELBf82v6YvcHB7ZwHyQnfrnlgIkLepnfseowTv19Yw0dYm1KuTuLGyAK8XtaKnHjMn_5';
+    const NEWS_URL = 'https://raw.githubusercontent.com/nebechanezzer/States-and-capitals/main/news.json';
 
-    async function loadManifest() {
+    // state
+    let currentIframe = null;
+    const container = document.getElementById('gameContainer');
+    const exitBtn = document.getElementById('exitBtn');
+
+    function el(tag, attrs = {}, children = []) {
+      const e = document.createElement(tag);
+      for (const k in attrs) {
+        if (k === 'class') e.className = attrs[k];
+        else if (k === 'text') e.textContent = attrs[k];
+        else e.setAttribute(k, attrs[k]);
+      }
+      children.forEach(c => e.appendChild(c));
+      return e;
+    }
+
+    async function loadGames() {
       try {
-        const res = await fetch(manifestPath + '?_=' + Date.now(), { cache: 'no-store' });
+        const res = await fetch(MANIFEST_URL + '?_=' + Date.now());
         if (!res.ok) throw new Error('HTTP ' + res.status);
-        return await res.json();
-      } catch (e) {
-        console.error('Failed to fetch manifest:', e);
-        return []; // fallback empty array
+        const data = await res.json();
+
+        let entries = [];
+        if (Array.isArray(data) && typeof data[0] === 'string') {
+          entries = data.map(fname => ({ title: fname.replace(/\.[^/.]+$/, ''), file: fname, folder: null }));
+        } else {
+          entries = data.map(obj => {
+            if (typeof obj === 'string') return { title: obj.replace(/\.[^/.]+$/, ''), file: obj, folder: null };
+            const file = obj.file || obj.path || obj.filename || (obj.folder ? (obj.folder + '/index.html') : null);
+            const title = obj.title || (file ? file.replace(/\.[^/.]+$/, '') : (obj.folder || 'Unknown'));
+            return { title, file, folder: obj.folder || null };
+          });
+        }
+
+        renderGames(entries);
+      } catch (err) {
+        console.error('Failed to load manifest:', err);
       }
     }
 
-    async function renderGames() {
-      const listEl = document.getElementById('game-list');
-      const games = await loadManifest();
-      listEl.innerHTML = '';
-      if (!games.length) {
-        listEl.textContent = 'No games found.';
-        return;
-      }
-      games.forEach(file => {
-        const name = file.replace(/\.html$/i, '');
-        const btn = document.createElement('button');
-        btn.textContent = name;
-        btn.className = 'game-button';
-        btn.addEventListener('click', () => loadGame(file));
-        listEl.appendChild(btn);
+    function renderGames(entries) {
+      container.innerHTML = '';
+      entries.forEach(entry => {
+        const file = entry.file;
+        if (!file || !/\.html$/i.test(file)) return;
+
+        const title = entry.title;
+        const thumbPath = entry.folder ? 
+          `${BASE_URL}${entry.folder}/thumbnail.png` : 
+          `${BASE_URL}${title}/thumbnail.png`;
+
+        const img = el('img', { src: thumbPath, alt: title });
+        img.onerror = () => { img.style.display = 'none'; };
+
+        const titleEl = el('p', { text: title });
+
+        const playBtn = el('button', { class: 'play-btn', text: 'Play' });
+        playBtn.addEventListener('click', () => {
+          const url = entry.folder ? `${BASE_URL}${entry.folder}/index.html` : `${BASE_URL}${file}`;
+          openGameFullscreen(url);
+        });
+
+        const downloadBtn = el('button', { class: 'download-btn', text: 'Download' });
+        downloadBtn.addEventListener('click', () => {
+          const url = entry.folder ? `${BASE_URL}${entry.folder}/index.html` : `${BASE_URL}${file}`;
+          forceDownload(url, file);
+        });
+
+        const buttons = el('div', { class: 'buttons' }, [playBtn, downloadBtn]);
+
+        const card = el('div', { class: 'game-card' }, []);
+        card.appendChild(img);
+        card.appendChild(titleEl);
+        card.appendChild(buttons);
+
+        container.appendChild(card);
       });
     }
 
-    function loadGame(file) {
-      currentGame = file;
-      const iframeContainer = document.getElementById('iframe-container');
-      iframeContainer.style.display = 'flex';
-      document.getElementById('game-frame').src = `https://rawcdn.githack.com/Nebechanezzer/States-and-capitals/main/games/${encodeURIComponent(file)}`;
+    function openGameFullscreen(url) {
+      if (currentIframe) return;
+      const iframe = document.createElement('iframe');
+      iframe.className = 'play-frame';
+      iframe.src = url;
+      document.body.appendChild(iframe);
+      currentIframe = iframe;
+      exitBtn.style.display = 'block';
     }
 
-    function downloadCurrentGame() {
-      if (!currentGame) return;
-      const url = `https://rawcdn.githack.com/Nebechanezzer/States-and-capitals/main/games/${encodeURIComponent(currentGame)}`;
+    exitBtn.addEventListener('click', () => {
+      if (currentIframe) {
+        currentIframe.remove();
+        currentIframe = null;
+      }
+      exitBtn.style.display = 'none';
+    });
+
+    function forceDownload(url, filename) {
       const a = document.createElement('a');
       a.href = url;
-      a.download = currentGame;
+      a.download = filename || '';
+      a.style.display = 'none';
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
     }
 
-    function goBack() {
-      document.getElementById('iframe-container').style.display = 'none';
-      document.getElementById('game-frame').src = '';
-      currentGame = null;
-    }
-
-    function toggleFullscreen() {
-      const iframe = document.getElementById('game-frame');
-      if (!document.fullscreenElement) {
-        iframe.requestFullscreen().catch(err => alert(err));
-      } else {
-        document.exitFullscreen();
-      }
-    }
-
-    function sendSuggestion() {
-      const suggestion = document.getElementById('suggestion-text').value.trim();
-      if (!suggestion) return alert('Please enter a suggestion first.');
-      fetch('https://discord.com/api/webhooks/1403226311761068153/ELBf82v6YvcHB7ZwHyQnfrnlgIkLepnfseowTv19Yw0dYm1KuTuLGyAK8XtaKnHjMn_5', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: suggestion })
-      }).then(() => {
+    document.getElementById('sendSuggestionBtn').addEventListener('click', async () => {
+      const input = document.getElementById('suggestionInput');
+      const val = input.value.trim();
+      if (!val) return alert('Please enter a suggestion.');
+      try {
+        await fetch(DISCORD_WEBHOOK, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: `New suggestion: ${val}` })
+        });
+        input.value = '';
         alert('Suggestion sent!');
-        document.getElementById('suggestion-text').value = '';
-      }).catch(err => {
+      } catch (err) {
+        console.error('Failed to send suggestion', err);
         alert('Failed to send suggestion.');
-        console.error(err);
-      });
-    }
-
-    document.getElementById('back-btn').addEventListener('click', goBack);
-    document.getElementById('fullscreen-btn').addEventListener('click', toggleFullscreen);
-    document.getElementById('download-btn').addEventListener('click', downloadCurrentGame);
-    document.getElementById('toggle-suggestion').addEventListener('click', () => {
-      const box = document.getElementById('suggestion-box');
-      box.style.display = box.style.display === 'none' ? 'block' : 'none';
+      }
     });
-    document.getElementById('send-suggestion').addEventListener('click', sendSuggestion);
 
-    window.addEventListener('load', renderGames);
+    document.getElementById('downloadStandaloneBtn').addEventListener('click', () => {
+      forceDownload('html.html', 'html.html');
+    });
+
+    document.getElementById('newsBtn').addEventListener('click', async () => {
+      try {
+        const res = await fetch(NEWS_URL + '?_=' + Date.now());
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const newsData = await res.json();
+        alert("📰 News:\n\n" + newsData.join("\n\n"));
+      } catch (err) {
+        alert("Failed to fetch news.");
+      }
+    });
+
+    loadGames();
   </script>
 </body>
-
 </html>
