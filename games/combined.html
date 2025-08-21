@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plinko</title>
+    <link rel="stylesheet" href="style.css">
+<style>
+body {
+    background-color: rgb(31, 41, 55);
+    margin: 0;
+    font-family: Arial, sans-serif;
+    color: rgb(241, 241, 242);
+    user-select: none;
+}
+
+.top_bar_grid {
+    width: 100%;
+    height: 60px;
+    background-color: rgb(55, 65, 82);
+    display: flex; 
+    align-items: center; 
+    padding: 0 1rem; 
+    position: relative;
+}
+
+.plinko_text {
+    font-size: 24px;
+    font-weight: bold;
+    margin-left: 1rem;
+    color: rgb(241, 241, 242);
+    position: relative;
+    top: 0.76rem;
+    transform: translateY(-50%);
+}
+
+.money_container {
+    width: 155px;
+    height: 40px;
+    background-color: rgb(15, 23, 42);
+    margin: 0 auto;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 5px;
+}
+
+.add_money {
+    width: 50px;
+    height: 30px;
+    background-color: rgb(37, 100, 235);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.add_money:hover {
+    background-color: rgb(29, 78, 216);
+}
+
+.dollar_icon {
+    margin-right: auto;
+    padding-left: 10px;
+    color: rgb(106, 113, 128);
+    font-weight: bold;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 17px;
+}
+
+.money_display {
+    margin-right: auto;
+    font-weight: bold;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 17px;
+}
+
+.game_bg {
+    height: 618px;
+    width: 93%;
+    background-color: rgb(14, 23, 41);
+    border-radius: 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px auto;
+    position: relative;
+}
+
+.game_grid {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 20px;
+    position: relative;
+}
+
+.game_sidebar_left {
+    width: 300px;
+    height: 618px;
+    background-color: rgb(51, 65, 85);
+    border-top-left-radius: 15px;
+    border-bottom-left-radius: 15px;
+    position: absolute;
+    left: 0;
+    z-index: 1;
+    top: 40px;
+    left: 24px;
+}
+
+.top_btn_grid {
+    width: 65%;
+    height: 50px;
+    background-color: rgb(15,23,42);
+    border-radius: 50px;
+    position: absolute;
+    left: 15%;
+    top: 5%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 10px;
+}
+
+.manual_drop_btn, .auto_drop_btn {
+    width: 48%;
+    height: 35px;
+    border-radius: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.auto_drop_btn {
+    background-color: rgb(15,23,42);
+}
+
+.manual_drop_btn {
+    background-color: rgb(72,85,105);
+}
+
+.manual_drop_btn:hover, .auto_drop_btn:hover {
+    background-color: rgb(83, 97, 119)
+}
+
+.bet_amount {
+    color: rgb(189,199,212);
+    font-size: 16px;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: bold;
+    position: absolute;
+    top: 105px;
+    left: 7%;
+}
+
+.bet_input {
+    position: relative;
+    width: 87%;
+    margin-left: 7%;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    top: 130px;
+}
+
+.bet_input input {
+    width: 60%;
+    height: 35px;
+    background-color: rgb(15, 23, 42);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    padding: 0 10px;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.bet_input::before {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgb(106, 113, 128);
+    z-index: 1;
+}
+
+.bet-btn {
+    padding: 5px 10px;
+    background-color: rgb(37, 100, 235);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+    top: 130px;
+}
+
+.bet_input .bet-btn {
+    height: 35px;
+    padding: 0 15px;
+    background-color: rgb(72,85,105);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.bet_input .bet-btn:hover {
+    background-color: rgb(94, 114, 141);
+}
+
+.rows_amount {
+    color: rgb(189,199,212);
+    font-size: 16px;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: bold;
+    position: absolute;
+    top: 195px;
+    left: 7%;
+}
+
+.rows_dropdown {
+    background-color: rgb(15, 23, 42);
+    color: rgb(241, 241, 242);
+    border: none;
+    border-radius: 8px;
+    padding: 8px;
+    position: relative;
+    width: 87%;
+    margin-left: 7%;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    top: 185px;
+    font-weight: bold;
+    font-size: 16px;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.drop_ball_btn {
+    width: 87%;
+    height: 45px;
+    background-color: rgb(38,197,94);
+    border: none;
+    border-radius: 8px;
+    color: rgb(241, 241, 242);
+    font-weight: bold;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 16px;
+    position: absolute;
+    top: 90%;
+    left: 7%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.drop_ball_btn:hover {
+    background-color: rgb(34,177,84);
+}
+
+.plinko_grid {
+    height: 100%;
+    width: 354%;
+    background-color: rgb(14, 23, 41);
+    position: absolute;
+    left: 100%;
+    top: 0;
+    border-radius: 15px;
+    overflow: hidden;
+}
+.peg {
+    width: 8px;
+    height: 8px;
+    background-color: rgb(71, 85, 105);
+    border-radius: 50%;
+    position: absolute;
+    transform: translate(-50%, -50%);
+}
+.ball {
+    width: 15px;
+    height: 15px;
+    background-color: rgb(37, 100, 235);
+    border-radius: 50%;
+    position: absolute;
+    transform: translate(-50%, -50%);
+    transition: none;
+    box-shadow: 0 0 10px rgba(37, 100, 235, 0.5);
+}
+.multiplier-slot {
+    position: absolute;
+    bottom: 0;
+    width: 45px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    
+}
+.multiplier-slot.active {
+    filter: brightness(1.2);
+}
+
+.multiplier-notification {
+    position: fixed;
+    right: 80px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    font-size: 24px;
+    font-weight: bold;
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: 1000;
+}
+
+.multiplier-notification.show {
+    opacity: 1;
+}
+
+.plinko_border_left {
+    width: 10px;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    background-color: transparent;
+    left: 520px;
+}
+
+.plinko_border_right {
+    width: 10px;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    background-color: transparent;
+    left: 1127px;
+}
+
+.auto_drop_interval {
+    display: none;
+    color: rgb(189,199,212);
+    font-size: 16px;
+    font-family: Arial, Helvetica, sans-serif;
+    font-weight: bold;
+    position: absolute;
+    top: 285px;
+    left: 7%;
+    z-index: 9;
+}
+
+.auto_drop_interval_input {
+    position: relative;
+    width: 100%;
+    margin-left: 7%;
+    display: flex;
+    /* display: none; */
+    opacity: 0;
+    align-items: center;
+    gap: 9px;
+    top: 240px;
+}
+
+.auto_drop_interval_input input {
+    width: 81%;
+    height: 35px;
+    background-color: rgb(15, 23, 42);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    padding: 0 10px;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.auto_drop_interval_input::before {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgb(106, 113, 128);
+    z-index: 1;
+}
+
+@media (max-width: 768px) {
+    .top_bar_grid {
+        height: 50px; 
+        padding: 0 0.5rem; 
+    }
+}
+
+@media (max-width: 480px) {
+    .top_bar_grid {
+        height: 45px; 
+        padding: 0 0.25rem; 
+    }
+    body {
+        font-size: 14px; 
+    }
+}
+</style>
+</head>
+<body>
+    <div class="top_bar_grid">
+        <div class="plinko_text">Plinko</div>
+        <div class="money_container">
+            <div class="dollar_icon">$</div>
+            <div class="money_display">0</div>
+            <div class="add_money">Add</div>
+        </div>
+    </div>
+
+    <div class="game_grid">
+        <div class="game_bg"></div>
+        <div class="game_sidebar_left">
+            <div class="top_btn_grid">
+                <div class="manual_drop_btn">Manual</div>
+                <div class="auto_drop_btn">Auto</div>
+            </div>
+            <div class="bet_amount">Bet Amount</div>
+            <div class="bet_input"><input type="number" value="10.00"><button class="bet-btn half">1/2</button><button class="bet-btn double">2x</button></div>            
+            <div class="rows_amount">Rows</div>
+            <select class="rows_dropdown">
+                <option value="8">8</option>
+                <option value="9">9</option>
+                <option value="10">10</option>
+                <option value="11">11</option>
+                <option value="12" selected>12</option>
+                <option value="13">13</option>
+                <option value="14">14</option>
+                <option value="15">15</option>
+                <option value="16">16</option>
+            </select>
+
+            <div class="auto_drop_interval">Auto Drop Interval (ms)</div>
+            <div class="auto_drop_interval_input"><input type="number" value="1000"></div> 
+            
+            <div class="drop_ball_btn">Drop Ball</div>
+            <div class="plinko_grid"></div>
+            <div class="plinko_border_left"></div>
+            <div class="plinko_border_right"></div>
+        </div>
+        <div class="multiplier-notification"></div>
+    </div>
+<script>
+const game = {
+    money: 150,
+    total_dropped: 0,
+    price_per_ball: 10,
+    auto_drop: false,
+    rows: 12,
+    pegs: [],
+    borders: [],
+    multipliers: [],
+    drop_in_progress: false
+};
+
+const physics = {
+    gravity: 0.15,
+    bounce: 0.7,
+    friction: 0.99,
+    peg_radius: 4,
+    ball_radius: 7.5,
+    random_factor: 0.3,
+    border_radius: 7.5
+};
+
+function show_multiplier_notification(multiplier) {
+    const notification = document.querySelector('.multiplier-notification');
+    notification.textContent = `${multiplier}x`;
+    notification.style.backgroundColor = get_multiplier_color(multiplier);
+    notification.classList.add('show');
+    
+    setTimeout(() => {
+        notification.classList.remove('show');
+    }, 2000);
+}
+
+function update_multiplier_display(multiplier) {
+    show_multiplier_notification(multiplier);
+}
+
+const plinko_grid = document.querySelector('.plinko_grid');
+const rows_dropdown = document.querySelector('.rows_dropdown');
+const drop_ball_btn = document.querySelector('.drop_ball_btn');
+const bet_input = document.querySelector('.bet_input input');
+const auto_drop_interval_input = document.querySelector('.auto_drop_interval_input');
+const money_display = document.querySelector('.money_display');
+const add_money_btn = document.querySelector('.add_money');
+const plinko_border_left = document.querySelector('.plinko_border_left');
+const plinko_border_right = document.querySelector('.plinko_border_right');
+const auto_drop_btn = document.querySelector('.auto_drop_btn');
+const manual_drop_btn = document.querySelector('.manual_drop_btn');
+const auto_drop_interval = document.querySelector('.auto_drop_interval');
+
+bet_input.addEventListener('input', () => {
+    const bet_value = parseFloat(bet_input.value);
+    if (!isNaN(bet_value) && bet_value > 0) {
+        game.price_per_ball = bet_value;
+    }
+});
+
+function generate_multipliers() {
+    const num_multipliers = game.rows;
+    const multiplier_config = {
+        center: {
+            value: 0.2,
+            range: 1
+        },
+        edges: {
+            value: 5,
+            positions: [0, num_multipliers - 1]
+        },
+        values: [
+            3, 3, 2, 1, 0.3, 0.2, 0.2, 0.3, 1, 2,
+            3, 1, 0.3, 0.4, 0.2, 0.2, 0.4, 1, 2, 3,
+            2, 1, 0.4, 0.2, 0.2, 0.2, 0.4, 1, 2, 3
+        ]
+    };
+    game.multipliers = Array.from({ length: num_multipliers }, (_, i) => {
+        if (multiplier_config.edges.positions.includes(i)) {
+            return multiplier_config.edges.value;
+        }
+        const fixed_index = i % multiplier_config.values.length;
+        return multiplier_config.values[fixed_index];
+    });
+}
+
+function create_plinko_grid() {
+    plinko_grid.innerHTML = '';
+    game.pegs = [];
+    game.borders = [plinko_border_left, plinko_border_right];
+    generate_multipliers();
+    
+    const peg_spacing = 40;
+    const start_x = plinko_grid.offsetWidth / 2;
+    const start_y = 50;
+
+    const last_row_pegs = game.rows + 2;
+    const peg_grid_width = peg_spacing * (last_row_pegs - 1);
+    const left_border_x = start_x - (peg_grid_width / 2) - physics.border_radius;
+    const right_border_x = start_x + (peg_grid_width / 2) + physics.border_radius;
+    
+    plinko_border_left.style.left = `${left_border_x}px`;
+    plinko_border_right.style.left = `${right_border_x}px`;
+    
+    for (let row = 0; row < game.rows; row++) {
+        const pegs_in_row = row + 3;
+        const row_x = start_x - (peg_spacing * (pegs_in_row - 1)) / 2;
+        for (let col = 0; col < pegs_in_row; col++) {
+            const peg = document.createElement('div');
+            peg.className = 'peg';
+            peg.style.left = `${row_x + col * peg_spacing}px`;
+            peg.style.top = `${start_y + row * peg_spacing}px`;
+            plinko_grid.appendChild(peg);
+            game.pegs.push({x: row_x + col * peg_spacing, y: start_y + row * peg_spacing});
+        }
+    }
+    
+    const slot_width = 50;
+    const slots_total_width = game.multipliers.length * slot_width;
+    const start_slot_x = (plinko_grid.offsetWidth - slots_total_width) / 2;
+    game.multipliers.forEach((mult, i) => {
+        const slot = document.createElement('div');
+        slot.className = 'multiplier-slot';
+        slot.style.left = `${start_slot_x + i * slot_width}px`;
+        slot.style.backgroundColor = get_multiplier_color(mult);
+        slot.textContent = `${mult}x`;
+        plinko_grid.appendChild(slot);
+    });
+}
+
+function get_multiplier_color(multiplier) {
+    if (multiplier >= 5) return 'rgb(37, 100, 235)';
+    if (multiplier >= 2) return 'rgb(38, 197, 94)';
+    return 'rgb(234, 179, 8)';
+}
+
+function drop_ball() {
+    if (game.money < game.price_per_ball) return;
+    
+    game.money -= game.price_per_ball;
+    update_money_display();
+    const ball = document.createElement('div');
+    ball.className = 'ball';
+    plinko_grid.appendChild(ball);
+
+    let x = plinko_grid.offsetWidth / 2 + (Math.random() - 0.5) * 40;
+    let y = 0;
+    let dx = (Math.random() - 0.5) * physics.random_factor;
+    let dy = 0;
+    let last_collision = null;
+
+    let last_time = 0;
+
+    function animate(timestamp) {
+        if (!last_time) last_time = timestamp;
+        const delta_time = (timestamp - last_time) / 16.67;
+        last_time = timestamp;
+        dy += physics.gravity * delta_time;
+        dx *= Math.pow(physics.friction, delta_time);
+        x += dx * delta_time;
+        y += dy * delta_time;
+        
+        game.pegs.forEach(peg => {
+            const distance = Math.sqrt((x - peg.x) ** 2 + (y - peg.y) ** 2);
+            if (distance < physics.peg_radius + physics.ball_radius && last_collision !== peg) {
+                const angle = Math.atan2(y - peg.y, x - peg.x);
+                const speed = Math.sqrt(dx * dx + dy * dy);
+                const bounce_speed = speed * physics.bounce;
+                const random_angle = angle + (Math.random() - 0.5) * 0.25;
+                dx = Math.cos(random_angle) * bounce_speed;
+                dy = Math.sin(random_angle) * bounce_speed;
+                last_collision = peg;
+                setTimeout(() => last_collision = null, 100);
+            }
+        });
+
+        const left_bound = plinko_border_left.offsetLeft + physics.border_radius;
+        const right_bound = plinko_border_right.offsetLeft - physics.border_radius;
+        if (x < left_bound) { 
+            x = left_bound;
+            dx = Math.abs(dx) * physics.bounce;
+        }
+        if (x > right_bound) {
+            x = right_bound;
+            dx = -Math.abs(dx) * physics.bounce;
+        }
+        
+        if (y > plinko_grid.offsetHeight - physics.ball_radius) {
+            const slot_width = 50;
+            const total_width = game.multipliers.length * slot_width;
+            const start_slot_x = (plinko_grid.offsetWidth - total_width) / 2;
+            const slot_index = Math.floor((x - start_slot_x) / slot_width);
+            if (slot_index >= 0 && slot_index < game.multipliers.length) {
+                const multiplier = game.multipliers[slot_index];
+                game.money += game.price_per_ball * multiplier;
+                update_multiplier_display(multiplier);
+                update_money_display();
+                
+                // Make multiplier slot grow temporarily with smooth transition
+                const slot = document.querySelectorAll('.multiplier-slot')[slot_index];
+                slot.style.transition = 'transform 0.1s ease-in-out';
+                slot.style.transform = 'scale(1.3)';
+                setTimeout(() => {
+                    slot.style.transform = 'scale(1)';
+                }, 100);
+                
+                ball.remove(); // Remove ball instantly upon hitting multiplier
+            }
+            return;
+        }
+        
+        ball.style.left = `${x}px`;
+        ball.style.top = `${y}px`;
+        requestAnimationFrame(animate);
+    }
+
+    requestAnimationFrame(animate);
+}
+
+
+
+function update_money_display() {
+    money_display.textContent = game.money.toFixed(2);
+}
+
+drop_ball_btn.addEventListener('click', drop_ball);
+
+rows_dropdown.addEventListener('change', (e) => {
+    game.rows = parseInt(e.target.value);
+    create_plinko_grid();
+});
+
+add_money_btn.addEventListener('click', () => {
+    game.money += 100;
+    update_money_display();
+});
+
+document.querySelector('.bet-btn.half').addEventListener('click', () => {
+    const current_value = parseFloat(bet_input.value) || 0;
+    const new_value = current_value / 2;
+    bet_input.value = Math.max(new_value, 0.01).toFixed(2);
+    game.price_per_ball = parseFloat(bet_input.value);
+});
+
+document.querySelector('.bet-btn.double').addEventListener('click', () => {
+    const current_value = parseFloat(bet_input.value) || 0;
+    bet_input.value = (current_value * 2).toFixed(2);
+    game.price_per_ball = parseFloat(bet_input.value);
+});
+
+document.querySelector('.auto_drop_btn').addEventListener('click', () => {
+    game.auto_drop = true;
+    if (game.auto_drop) {
+        auto_drop_btn.style.backgroundColor = 'rgb(72,85,105)';
+        manual_drop_btn.style.backgroundColor = 'rgb(15,23,42)';
+    } else {
+        auto_drop_btn.style.backgroundColor = 'rgb(15,23,42)';
+        manual_drop_btn.style.backgroundColor = 'rgb(72,85,105)';
+
+    }
+});
+
+document.querySelector('.manual_drop_btn').addEventListener('click', () => {
+    game.auto_drop = false;
+    if (!game.auto_drop) {
+        auto_drop_btn.style.backgroundColor = 'rgb(15,23,42)';
+        manual_drop_btn.style.backgroundColor = 'rgb(72,85,105)';
+    } else {
+        auto_drop_btn.style.backgroundColor = 'rgb(72,85,105)';
+        manual_drop_btn.style.backgroundColor = 'rgb(15,23,42)';
+
+    }
+});
+
+let drop_int;
+function start_drop() {
+    if (drop_int) clearInterval(drop_int);
+    const int_val = parseInt(auto_drop_interval_input.querySelector('input').value);
+    drop_int = setInterval(() => {
+        if (game.auto_drop) {
+            drop_ball_btn.style.opacity = '0.5';
+            drop_ball_btn.style.pointerEvents = 'none';
+            auto_drop_interval_input.style.opacity = 1;
+            auto_drop_interval_input.style.pointerEvents = 'auto';
+            auto_drop_interval.style.display = 'block';
+            auto_drop_interval.style.pointerEvents = 'auto';
+            drop_ball();
+        } else {
+            auto_drop_interval.style.display = 'none';
+            auto_drop_interval.style.pointerEvents = 'none';
+            drop_ball_btn.style.opacity = '1';
+            drop_ball_btn.style.pointerEvents = 'auto';
+            auto_drop_interval_input.style.opacity = 0;
+            auto_drop_interval_input.style.pointerEvents = 'none';
+
+        }
+    }, int_val);
+}
+auto_drop_interval_input.querySelector('input').addEventListener('input', start_drop);
+start_drop();
+
+create_plinko_grid();
+update_money_display();
+
+</script>
+</body>
+<script src="script.js"></script>
+</html>
